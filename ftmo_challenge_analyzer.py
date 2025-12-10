@@ -63,14 +63,20 @@ class BacktestTrade:
     tp1_price: float
     tp2_price: Optional[float]
     tp3_price: Optional[float]
-    exit_date: datetime
-    exit_price: float
+    tp4_price: Optional[float] = None
+    tp5_price: Optional[float] = None
+    exit_date: datetime = None
+    exit_price: float = 0.0
     tp1_hit: bool = False
     tp1_hit_date: Optional[datetime] = None
     tp2_hit: bool = False
     tp2_hit_date: Optional[datetime] = None
     tp3_hit: bool = False
     tp3_hit_date: Optional[datetime] = None
+    tp4_hit: bool = False
+    tp4_hit_date: Optional[datetime] = None
+    tp5_hit: bool = False
+    tp5_hit_date: Optional[datetime] = None
     sl_hit: bool = False
     sl_hit_date: Optional[datetime] = None
     exit_reason: str = ""
@@ -81,6 +87,7 @@ class BacktestTrade:
     holding_time_hours: float = 0.0
     price_validated: bool = False
     validation_notes: str = ""
+    trailing_sl: Optional[float] = None
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -96,11 +103,15 @@ class BacktestTrade:
             "TP1 Price": self.tp1_price,
             "TP2 Price": self.tp2_price or "",
             "TP3 Price": self.tp3_price or "",
+            "TP4 Price": self.tp4_price or "",
+            "TP5 Price": self.tp5_price or "",
             "Exit Date": self.exit_date.strftime("%Y-%m-%d %H:%M:%S") if self.exit_date else "",
             "Exit Price": self.exit_price,
             "TP1 Hit?": f"YES ({self.tp1_hit_date.strftime('%Y-%m-%d')})" if self.tp1_hit and self.tp1_hit_date else "NO",
             "TP2 Hit?": f"YES ({self.tp2_hit_date.strftime('%Y-%m-%d')})" if self.tp2_hit and self.tp2_hit_date else "NO",
             "TP3 Hit?": f"YES ({self.tp3_hit_date.strftime('%Y-%m-%d')})" if self.tp3_hit and self.tp3_hit_date else "NO",
+            "TP4 Hit?": f"YES ({self.tp4_hit_date.strftime('%Y-%m-%d')})" if self.tp4_hit and self.tp4_hit_date else "NO",
+            "TP5 Hit?": f"YES ({self.tp5_hit_date.strftime('%Y-%m-%d')})" if self.tp5_hit and self.tp5_hit_date else "NO",
             "SL Hit?": f"YES ({self.sl_hit_date.strftime('%Y-%m-%d')})" if self.sl_hit and self.sl_hit_date else "NO",
             "Final Exit Reason": self.exit_reason,
             "R Multiple": f"{self.r_multiple:+.2f}R",

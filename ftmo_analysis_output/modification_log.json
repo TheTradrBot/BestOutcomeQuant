@@ -759,5 +759,77 @@
       "risk_per_trade_pct -> 1.2000000000000006"
     ],
     "timestamp": "2025-12-10T22:41:40.509537"
+  },
+  {
+    "iteration": 1,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter1_20251210_231404.py",
+    "changes": [
+      "risk_per_trade_pct -> 1.0500000000000007"
+    ],
+    "timestamp": "2025-12-10T23:14:04.857171"
+  },
+  {
+    "iteration": 1,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter1_20251210_231447.py",
+    "changes": [
+      "risk_per_trade_pct -> 1.3000000000000007"
+    ],
+    "timestamp": "2025-12-10T23:14:47.211839"
+  },
+  {
+    "iteration": 2,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter2_20251210_231451.py",
+    "changes": [
+      "risk_per_trade_pct -> 1.1500000000000008"
+    ],
+    "timestamp": "2025-12-10T23:14:51.667864"
+  },
+  {
+    "iteration": 3,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter3_20251210_231456.py",
+    "changes": [
+      "risk_per_trade_pct -> 1.0000000000000009"
+    ],
+    "timestamp": "2025-12-10T23:14:56.177232"
+  },
+  {
+    "iteration": 4,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter4_20251210_231500.py",
+    "changes": [
+      "risk_per_trade_pct -> 1.2500000000000009"
+    ],
+    "timestamp": "2025-12-10T23:15:00.570890"
+  },
+  {
+    "iteration": 5,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter5_20251210_231505.py",
+    "changes": [
+      "risk_per_trade_pct -> 1.100000000000001"
+    ],
+    "timestamp": "2025-12-10T23:15:05.398241"
+  },
+  {
+    "iteration": 6,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter6_20251210_231510.py",
+    "changes": [
+      "risk_per_trade_pct -> 0.950000000000001"
+    ],
+    "timestamp": "2025-12-10T23:15:10.069678"
+  },
+  {
+    "iteration": 7,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter7_20251210_231514.py",
+    "changes": [
+      "risk_per_trade_pct -> 1.200000000000001"
+    ],
+    "timestamp": "2025-12-10T23:15:14.767497"
   }
 ]
