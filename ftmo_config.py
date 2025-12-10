@@ -13,7 +13,7 @@ Key Safety Features:
 """
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Tuple
 
 
 @dataclass
@@ -157,7 +157,7 @@ def get_pip_size(symbol: str) -> float:
     return 0.0001
 
 
-def get_sl_limits(symbol: str) -> tuple:
+def get_sl_limits(symbol: str) -> Tuple[float, float]:
     """
     Get asset-specific SL limits (min_pips, max_pips).
     
