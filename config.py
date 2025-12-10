@@ -1,10 +1,12 @@
 # config.py
 """
-Configuration for Blueprint Trader AI.
+Configuration for the trading bot
 
-You keep:
-- secrets (tokens, API keys) in Replit Secrets (env vars)
-- public config (channel IDs, instruments, intervals) here
+SYMBOL FORMATS:
+- All symbols in this file use OANDA format (with underscores)
+- Examples: EUR_USD, XAU_USD, SPX500_USD
+- These are converted to broker format (EURUSD, XAUUSD, US500.cash) via symbol_mapping.py
+- Conversion happens automatically in main_live_bot.py using the symbol_map
 """
 
 import os

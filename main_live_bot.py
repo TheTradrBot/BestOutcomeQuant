@@ -195,17 +195,26 @@ class LiveTradingBot:
         log.info(f"Broker has {len(available_symbols)} total symbols")
         
         # Map our symbols to broker symbols
+        # TRADABLE_SYMBOLS uses OANDA format (EUR_USD), broker uses FTMO format (EURUSD)
         mapped_count = 0
         self.symbol_map = {}
         
         for our_symbol in TRADABLE_SYMBOLS:
+            # Convert OANDA format to FTMO format for matching
             broker_symbol = self.mt5.find_symbol_match(our_symbol)
             if broker_symbol:
                 self.symbol_map[our_symbol] = broker_symbol
                 mapped_count += 1
-                log.info(f"✓ {our_symbol:15s} -> {broker_symbol}")
+                log.info(f"✓ {our_symbol:15s} (OANDA) -> {broker_symbol} (FTMO)")
             else:
-                log.warning(f"✗ {our_symbol:15s} -> NOT FOUND")
+                # Try manual conversion as fallback
+                ftmo_symbol = oanda_to_ftmo(our_symbol)
+                if self.mt5.get_symbol_info(ftmo_symbol):
+                    self.symbol_map[our_symbol] = ftmo_symbol
+                    mapped_count += 1
+                    log.info(f"✓ {our_symbol:15s} (OANDA) -> {ftmo_symbol} (FTMO fallback)")
+                else:
+                    log.warning(f"✗ {our_symbol:15s} -> NOT FOUND on broker")
         
         log.info("=" * 70)
         log.info(f"Mapped {mapped_count}/{len(TRADABLE_SYMBOLS)} symbols")
@@ -214,6 +223,20 @@ class LiveTradingBot:
         if mapped_count == 0:
             log.error("No symbols could be mapped! Check broker symbol naming.")
             return False
+        
+        # Validate symbol mapping integrity
+        log.info("\n" + "=" * 70)
+        log.info("VALIDATING SYMBOL MAPPING")
+        log.info("=" * 70)
+        sample_symbols = list(self.symbol_map.items())[:5]
+        for oanda_sym, broker_sym in sample_symbols:
+            # Test that we can get symbol info
+            info = self.mt5.get_symbol_info(broker_sym)
+            if info:
+                log.info(f"✓ {oanda_sym} -> {broker_sym} (digits: {info.get('digits')}, spread: {info.get('spread')})")
+            else:
+                log.error(f"✗ {oanda_sym} -> {broker_sym} FAILED to get symbol info")
+        log.info("=" * 70)
         
         balance = account.get('balance', 0)
         equity = account.get('equity', 0)
@@ -279,9 +302,11 @@ class LiveTradingBot:
     
     def check_existing_position(self, symbol: str) -> bool:
         """Check if we already have a position on this symbol."""
+        # symbol is in OANDA format, convert to broker format for checking
+        broker_symbol = self.symbol_map.get(symbol, symbol)
         positions = self.mt5.get_my_positions()
         for pos in positions:
-            if pos.symbol == symbol:
+            if pos.symbol == broker_symbol:
                 return True
         return False
     
@@ -321,6 +346,12 @@ class LiveTradingBot:
         """
         Scan a single symbol for trade setup.
         
+        SYMBOL FORMAT:
+        - Input symbol: OANDA format (e.g., EUR_USD, XAU_USD, SPX500_USD)
+        - Broker symbol: FTMO MT5 format (e.g., EURUSD, XAUUSD, US500.cash)
+        - Data fetching: Uses broker symbol for MT5 candles
+        - Trading: Uses broker symbol for orders
+        
         MATCHES BACKTEST LOGIC EXACTLY:
         1. Get HTF trends (M/W/D)
         2. Pick direction from bias
@@ -338,7 +369,7 @@ class LiveTradingBot:
             return None
         
         broker_symbol = self.symbol_map[symbol]
-        log.info(f"[{symbol}] Scanning (broker: {broker_symbol})...")
+        log.info(f"[{symbol}] Scanning (OANDA: {symbol}, FTMO: {broker_symbol})...")
         
         if self.check_existing_position(broker_symbol):
             log.info(f"[{symbol}] Already in position, skipping")
