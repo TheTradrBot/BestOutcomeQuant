@@ -492,11 +492,6 @@ class LiveTradingBot:
             sl_pips = min_sl_pips
             log.info(f"[{symbol}] SL adjusted to minimum: {sl:.5f} ({sl_pips:.1f} pips)")
         
-        # Max SL check - reject if too wide
-        if sl_pips > max_sl_pips:
-            log.info(f"[{symbol}] SL too wide: {sl_pips:.1f} pips (max: {max_sl_pips}) - skipping")
-            return None
-        
         # ATR-based SL validation (same as backtest)
         atr = self._calculate_atr(daily_candles, period=14)
         if atr > 0:
@@ -511,10 +506,6 @@ class LiveTradingBot:
                 risk = abs(entry - sl)
                 log.info(f"[{symbol}] SL adjusted to {FTMO_CONFIG.min_sl_atr_ratio} ATR: {sl:.5f}")
             
-            elif sl_atr_ratio > FTMO_CONFIG.max_sl_atr_ratio:
-                log.info(f"[{symbol}] SL too wide in ATR terms: {sl_atr_ratio:.2f} ATR (max: {FTMO_CONFIG.max_sl_atr_ratio}) - skipping")
-                return None
-        
         # Calculate TPs using EXACT same R multiples as backtest (including TP4 and TP5)
         risk = abs(entry - sl)
         if direction == "bullish":
