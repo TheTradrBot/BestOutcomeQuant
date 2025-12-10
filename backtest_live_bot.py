@@ -138,12 +138,28 @@ def backtest_live_bot(
                 
                 # Get prices - ensure we have valid data
                 entry_price = trade.get('entry_price', 0) or trade.get('entry', 0)
-                exit_price = trade.get('exit_price', 0) or trade.get('exit', 0)
                 stop_loss = trade.get('stop_loss', 0) or trade.get('sl', 0)
                 
+                # Exit price should come from actual exit, not default to entry
+                exit_price = trade.get('exit_price', 0) or trade.get('exit', 0)
+                if not exit_price or exit_price == entry_price:
+                    # If no valid exit price, use exit_reason to determine
+                    exit_reason = trade.get('exit_reason', '')
+                    if exit_reason == 'TP3':
+                        exit_price = trade.get('tp3', entry_price)
+                    elif exit_reason == 'TP2':
+                        exit_price = trade.get('tp2', entry_price)
+                    elif exit_reason in ['TP1', 'TP1+Trail']:
+                        exit_price = trade.get('tp1', entry_price)
+                    elif exit_reason == 'SL':
+                        exit_price = stop_loss
+                
                 # Skip invalid trades
-                if not entry_price or not stop_loss:
+                if not entry_price or not stop_loss or not exit_price:
                     continue
+                
+                # Get confluence score - backtest.py returns it as 'confluence'
+                confluence = trade.get('confluence_score', 0) or trade.get('confluence', 0)
                 
                 bt = BacktestTrade(
                     symbol=symbol,
@@ -155,9 +171,9 @@ def backtest_live_bot(
                     tp2=trade.get('tp2'),
                     tp3=trade.get('tp3'),
                     exit_date=exit_date,
-                    exit_price=exit_price if exit_price else entry_price,
+                    exit_price=exit_price,
                     exit_reason=trade.get('exit_reason', ''),
-                    confluence_score=trade.get('confluence', 0) or trade.get('confluence_score', 0),
+                    confluence_score=confluence,
                 )
                 
                 # Calculate R based on exit reason (matching live bot partial logic)
@@ -344,7 +360,7 @@ def export_trades_to_csv(trades: List[BacktestTrade], filename: str):
                 'Trade #': i,
                 'Symbol': trade.symbol,
                 'Direction': trade.direction.upper(),
-                'Confluence': f"{trade.confluence_score}/7" if trade.confluence_score > 0 else "N/A",
+                'Confluence': f"{trade.confluence_score}/7",
                 'Entry Date': trade.entry_date.strftime('%Y-%m-%d %H:%M') if trade.entry_date else 'N/A',
                 'Entry Price': f"{trade.entry_price:.5f}" if trade.entry_price else 'N/A',
                 'Stop Loss': f"{trade.stop_loss:.5f}" if trade.stop_loss else 'N/A',
