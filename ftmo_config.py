@@ -10,70 +10,71 @@ from typing import List, Tuple
 @dataclass
 class FTMO10KConfig:
     """FTMO 10K Challenge Configuration - Ultra-Conservative Approach"""
-    
+
     # === ACCOUNT SETTINGS ===
     account_size: float = 10000.0  # FTMO 10K challenge account size
     account_currency: str = "USD"
-    
+
     # === FTMO RULES ===
     max_daily_loss_pct: float = 5.0  # Maximum daily loss (5% of starting balance)
     max_total_drawdown_pct: float = 10.0  # Maximum total drawdown (10%)
     phase1_target_pct: float = 10.0  # Phase 1 profit target (10%)
     phase2_target_pct: float = 5.0  # Phase 2 profit target (5%)
     min_trading_days: int = 4  # Minimum 4 trading days required
-    
+
     # === SAFETY BUFFERS (Ultra-Conservative) ===
     daily_loss_warning_pct: float = 2.5  # Warning at 2.5% daily loss
     daily_loss_reduce_pct: float = 3.5  # Reduce risk at 3.5% daily loss
     daily_loss_halt_pct: float = 4.2  # Halt trading at 4.2% daily loss
     total_dd_warning_pct: float = 5.0  # Warning at 5% total DD
     total_dd_emergency_pct: float = 7.0  # Emergency mode at 7% total DD
-    
+
     # === POSITION SIZING (Ultra-Conservative) ===
     risk_per_trade_pct: float = 0.5  # Ultra-conservative: 0.5% per trade
     max_risk_aggressive_pct: float = 0.75  # Aggressive mode: 0.75%
     max_risk_normal_pct: float = 0.5  # Normal mode: 0.5%
     max_risk_conservative_pct: float = 0.25  # Conservative mode: 0.25%
-    
+
     # === TRADE LIMITS ===
     max_concurrent_trades: int = 3  # Max 3 concurrent positions
     max_trades_per_day: int = 5  # Max 5 trades per day
     max_trades_per_week: int = 20  # Max 20 trades per week
     max_pending_orders: int = 5  # Max 5 pending orders
-    
+
     # === ENTRY OPTIMIZATION ===
     max_entry_distance_r: float = 2.0  # Max 2R distance from current price
     immediate_entry_r: float = 0.4  # Execute immediately if within 0.4R
-    
+
     # === PENDING ORDER SETTINGS ===
     pending_order_expiry_hours: float = 6.0  # Expire pending orders after 6 hours
-    
+    pending_order_max_age_hours: float = 6.0  # Max age for pending orders (same as expiry)
+
     # === SL VALIDATION (ATR-based) ===
     min_sl_atr_ratio: float = 1.0  # Minimum SL = 1.0 * ATR
     max_sl_atr_ratio: float = 3.0  # Maximum SL = 3.0 * ATR
-    
+
     # === CONFLUENCE SETTINGS ===
     min_confluence_score: int = 5  # Minimum 5/7 confluence (ultra-strict)
     min_quality_factors: int = 2  # Minimum 2 quality factors
-    
+
     # === TAKE PROFIT SETTINGS ===
     tp1_r_multiple: float = 1.5  # TP1 at 1.5R
     tp2_r_multiple: float = 3.0  # TP2 at 3.0R
     tp3_r_multiple: float = 5.0  # TP3 at 5.0R
-    
+
     # === PARTIAL CLOSE PERCENTAGES ===
     tp1_close_pct: float = 0.40  # Close 40% at TP1
     tp2_close_pct: float = 0.35  # Close 35% at TP2
     tp3_close_pct: float = 0.25  # Close 25% at TP3
-    
+
     # === BREAKEVEN SETTINGS ===
     breakeven_trigger_r: float = 1.0  # Move to BE after 1R profit
     breakeven_buffer_pips: float = 5.0  # BE + 5 pips
-    
+
     # === ULTRA SAFE MODE ===
     profit_ultra_safe_threshold_pct: float = 9.0  # Switch to ultra-safe at 9% profit (allows faster Step 1 completion)
     ultra_safe_risk_pct: float = 0.25  # Use 0.25% risk in ultra-safe mode
-    
+
     # === ASSET WHITELIST (Top 10 Performers from Backtest) ===
     # Based on Jan-Nov 2024 backtest with 5/7 confluence filter
     # Performance metrics: Win Rate (WR%) and average R-multiple
@@ -89,14 +90,14 @@ class FTMO10KConfig:
         "XAUUSD",  # 81% WR, 2.3R avg
         "EURGBP",  # 80% WR, 2.2R avg
     ])
-    
+
     # === PROTECTION LOOP SETTINGS ===
     protection_loop_interval_sec: float = 30.0  # Check every 30 seconds
-    
+
     # === WEEKLY TRACKING ===
     week_start_date: str = ""  # Track current week
     current_week_trades: int = 0  # Trades this week
-    
+
     def __post_init__(self):
         """Validate configuration parameters"""
         if self.risk_per_trade_pct > 1.0:
@@ -107,46 +108,46 @@ class FTMO10KConfig:
             raise ValueError("Max total drawdown cannot exceed 10% for FTMO")
         if self.max_concurrent_trades > 5:
             raise ValueError("Max concurrent trades should not exceed 5 for safety")
-    
+
     def get_risk_pct(self, daily_loss_pct: float, total_dd_pct: float) -> float:
         """
         Get risk percentage based on current account state.
         Dynamic risk adjustment based on drawdown levels.
-        
+
         Args:
             daily_loss_pct: Daily loss as positive percentage (e.g., 2.5 means 2.5% loss)
             total_dd_pct: Total drawdown as positive percentage
-        
+
         Returns:
             Risk percentage to use for next trade
         """
         # Ultra-safe mode if in daily profit (loss is negative/zero)
         if daily_loss_pct <= 0:  # In profit or breakeven
             return self.ultra_safe_risk_pct
-        
+
         # Emergency mode - approaching limits
         if daily_loss_pct >= self.daily_loss_reduce_pct or total_dd_pct >= self.total_dd_emergency_pct:
             return self.max_risk_conservative_pct
-        
+
         # Warning mode
         if daily_loss_pct >= self.daily_loss_warning_pct or total_dd_pct >= self.total_dd_warning_pct:
             return self.max_risk_normal_pct
-        
+
         # Normal/aggressive mode (still conservative)
         if daily_loss_pct < 2.0 and total_dd_pct < 3.0:
             return self.max_risk_aggressive_pct
-        
+
         return self.risk_per_trade_pct
-    
+
     def get_max_trades(self, profit_pct: float) -> int:
         """
         Get max concurrent trades based on profit level.
         Reduce exposure as we approach target.
-        
+
         Args:
             profit_pct: Total profit percentage relative to initial balance
                        (e.g., 8.5 means 8.5% profit from starting balance)
-        
+
         Returns:
             Maximum number of concurrent trades allowed
         """
@@ -156,7 +157,7 @@ class FTMO10KConfig:
             return 3
         else:  # Normal operations
             return self.max_concurrent_trades
-    
+
     def is_asset_whitelisted(self, symbol: str) -> bool:
         """
         Check if asset is in the whitelist.
@@ -164,16 +165,16 @@ class FTMO10KConfig:
         """
         # Normalize symbol (remove any suffix like .a or _m)
         base_symbol = symbol.replace('.a', '').replace('_m', '').upper()
-        
+
         # Check exact match
         if base_symbol in self.whitelist_assets:
             return True
-        
+
         # Check if any whitelist asset is a substring (e.g., EURUSD matches EUR_USD)
         for asset in self.whitelist_assets:
             if asset.replace('_', '') == base_symbol.replace('_', ''):
                 return True
-        
+
         return False
 
 
@@ -191,7 +192,7 @@ PIP_SIZES = {
     "AUDUSD": 0.00001,
     "USDCAD": 0.00001,
     "NZDUSD": 0.00001,
-    
+
     # Cross Pairs
     "EURJPY": 0.001,
     "GBPJPY": 0.001,
@@ -213,7 +214,7 @@ PIP_SIZES = {
     "EURNZD": 0.00001,
     "NZDCAD": 0.00001,
     "NZDCHF": 0.00001,
-    
+
     # Exotic/Commodity Currencies
     "USDMXN": 0.00001,
     "USDZAR": 0.00001,
@@ -223,11 +224,11 @@ PIP_SIZES = {
     "USDDKK": 0.00001,
     "USDPLN": 0.00001,
     "USDHUF": 0.001,
-    
+
     # Metals
     "XAUUSD": 0.01,  # Gold
     "XAGUSD": 0.001,  # Silver
-    
+
     # Indices (if traded)
     "US30": 1.0,
     "NAS100": 1.0,
@@ -246,11 +247,11 @@ def get_pip_size(symbol: str) -> float:
     """
     # Normalize symbol
     base_symbol = symbol.replace('.a', '').replace('_m', '').upper()
-    
+
     # Check exact match
     if base_symbol in PIP_SIZES:
         return PIP_SIZES[base_symbol]
-    
+
     # Default based on symbol type
     if "JPY" in base_symbol or "HUF" in base_symbol:
         return 0.001  # 3-digit quote
@@ -266,7 +267,7 @@ def get_sl_limits(symbol: str) -> Tuple[float, float]:
     """
     Get asset-specific SL limits in pips.
     Returns (min_sl_pips, max_sl_pips) based on asset volatility.
-    
+
     Uses priority-based classification to avoid ambiguity:
     1. Metals (XAU, XAG, GOLD, SILVER)
     2. JPY pairs
@@ -275,22 +276,22 @@ def get_sl_limits(symbol: str) -> Tuple[float, float]:
     5. Major pairs (default)
     """
     base_symbol = symbol.replace('.a', '').replace('_m', '').upper()
-    
+
     # Priority 1: Metals (highest priority to avoid XAU matching with AUD)
     if any(x in base_symbol for x in ["XAU", "XAG", "GOLD", "SILVER"]):
         return (20.0, 100.0)  # 20-100 pips
-    
+
     # Priority 2: JPY pairs (check before other currencies)
     if "JPY" in base_symbol:
         return (20.0, 100.0)  # 20-100 pips (0.20-1.00 in JPY terms)
-    
+
     # Priority 3: High volatility pairs (GBP)
     if "GBP" in base_symbol:
         return (20.0, 100.0)  # 20-100 pips
-    
+
     # Priority 4: Exotic pairs (wider stops)
     if any(x in base_symbol for x in ["MXN", "ZAR", "TRY", "SEK", "NOK"]):
         return (30.0, 150.0)  # 30-150 pips
-    
+
     # Priority 5: Major pairs (default for EUR, USD, AUD, NZD, CAD, CHF)
     return (15.0, 80.0)  # 15-80 pips
