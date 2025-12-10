@@ -127,19 +127,37 @@ def backtest_live_bot(
                 if not is_trading_day(entry_date):
                     continue
                 
+                # Parse exit date
+                exit_date_raw = trade.get('exit_date')
+                if isinstance(exit_date_raw, str):
+                    exit_date = datetime.fromisoformat(exit_date_raw)
+                elif isinstance(exit_date_raw, datetime):
+                    exit_date = exit_date_raw
+                else:
+                    exit_date = entry_date
+                
+                # Get prices - ensure we have valid data
+                entry_price = trade.get('entry_price', 0) or trade.get('entry', 0)
+                exit_price = trade.get('exit_price', 0) or trade.get('exit', 0)
+                stop_loss = trade.get('stop_loss', 0) or trade.get('sl', 0)
+                
+                # Skip invalid trades
+                if not entry_price or not stop_loss:
+                    continue
+                
                 bt = BacktestTrade(
                     symbol=symbol,
                     direction=trade.get('direction', 'bullish'),
                     entry_date=entry_date,
-                    entry_price=trade['entry_price'],
-                    stop_loss=trade['stop_loss'],
+                    entry_price=entry_price,
+                    stop_loss=stop_loss,
                     tp1=trade.get('tp1'),
                     tp2=trade.get('tp2'),
                     tp3=trade.get('tp3'),
-                    exit_date=datetime.fromisoformat(trade['exit_date']) if isinstance(trade['exit_date'], str) else trade['exit_date'],
-                    exit_price=trade.get('exit_price', trade['entry_price']),
+                    exit_date=exit_date,
+                    exit_price=exit_price if exit_price else entry_price,
                     exit_reason=trade.get('exit_reason', ''),
-                    confluence_score=trade.get('confluence_score', 0),
+                    confluence_score=trade.get('confluence', 0) or trade.get('confluence_score', 0),
                 )
                 
                 # Calculate R based on exit reason (matching live bot partial logic)
@@ -276,7 +294,7 @@ def export_trades_to_csv(trades: List[BacktestTrade], filename: str):
             'Entry Date', 'Entry Price', 'Stop Loss',
             'TP1', 'TP2', 'TP3',
             'Exit Date', 'Exit Price', 'Exit Reason',
-            'TP Hit', 'SL Hit', 'R Multiple', 'Result'
+            'TP Hit', 'SL Hit', 'R Multiple', 'Result', 'Risk Pips'
         ]
         
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -285,10 +303,20 @@ def export_trades_to_csv(trades: List[BacktestTrade], filename: str):
         for i, trade in enumerate(trades, 1):
             # Calculate R-multiple from partial exits
             total_r = 0.0
-            for exit_info in trade.partial_exits:
-                r_mult = exit_info.get('r_multiple', 0)
-                portion = exit_info.get('portion', 0)
-                total_r += r_mult * portion
+            if trade.partial_exits:
+                for exit_info in trade.partial_exits:
+                    r_mult = exit_info.get('r_multiple', 0)
+                    portion = exit_info.get('portion', 0)
+                    total_r += r_mult * portion
+            else:
+                # Calculate R from entry/exit if no partials
+                if trade.exit_price and trade.entry_price and trade.stop_loss:
+                    risk = abs(trade.entry_price - trade.stop_loss)
+                    if risk > 0:
+                        if trade.direction == "bullish":
+                            total_r = (trade.exit_price - trade.entry_price) / risk
+                        else:
+                            total_r = (trade.entry_price - trade.exit_price) / risk
             
             # Determine which TP was hit
             tp_hit = "None"
@@ -298,18 +326,25 @@ def export_trades_to_csv(trades: List[BacktestTrade], filename: str):
                 tp_hit = "TP3"
             elif trade.exit_reason == "TP2":
                 tp_hit = "TP2"
-            elif trade.exit_reason == "TP1+Trail":
+            elif trade.exit_reason == "TP1+Trail" or trade.exit_reason == "TP1":
                 tp_hit = "TP1"
             elif trade.exit_reason == "SL":
                 sl_hit = "Yes"
             
             result_text = "WIN" if total_r > 0 else "LOSS" if total_r < 0 else "BE"
             
+            # Calculate risk in pips
+            risk_pips = 0
+            if trade.entry_price and trade.stop_loss:
+                from ftmo_config import get_pip_size
+                pip_size = get_pip_size(trade.symbol)
+                risk_pips = abs(trade.entry_price - trade.stop_loss) / pip_size
+            
             writer.writerow({
                 'Trade #': i,
                 'Symbol': trade.symbol,
                 'Direction': trade.direction.upper(),
-                'Confluence': f"{trade.confluence_score}/7",
+                'Confluence': f"{trade.confluence_score}/7" if trade.confluence_score > 0 else "N/A",
                 'Entry Date': trade.entry_date.strftime('%Y-%m-%d %H:%M') if trade.entry_date else 'N/A',
                 'Entry Price': f"{trade.entry_price:.5f}" if trade.entry_price else 'N/A',
                 'Stop Loss': f"{trade.stop_loss:.5f}" if trade.stop_loss else 'N/A',
@@ -318,11 +353,12 @@ def export_trades_to_csv(trades: List[BacktestTrade], filename: str):
                 'TP3': f"{trade.tp3:.5f}" if trade.tp3 else 'N/A',
                 'Exit Date': trade.exit_date.strftime('%Y-%m-%d %H:%M') if trade.exit_date else 'N/A',
                 'Exit Price': f"{trade.exit_price:.5f}" if trade.exit_price else 'N/A',
-                'Exit Reason': trade.exit_reason,
+                'Exit Reason': trade.exit_reason or 'N/A',
                 'TP Hit': tp_hit,
                 'SL Hit': sl_hit,
                 'R Multiple': f"{total_r:+.2f}R",
-                'Result': result_text
+                'Result': result_text,
+                'Risk Pips': f"{risk_pips:.1f}" if risk_pips > 0 else 'N/A'
             })
     
     print(f"\n✅ Trade details exported to: {filename}")
