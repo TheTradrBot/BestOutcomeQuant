@@ -12,7 +12,7 @@ Key Safety Features:
 - Smart position sizing that adapts to drawdown
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 
@@ -79,25 +79,20 @@ class FTMO10KConfig:
     ultra_safe_risk_pct: float = 0.3  # Reduce to 0.3% risk when ultra-safe
     
     # === TOP 10 ASSET WHITELIST (Based on backtest performance) ===
-    whitelist_assets: List[str] = None  # Will be set in __post_init__
-    
-    def __post_init__(self):
-        """Initialize whitelist and validate settings"""
-        # Top 10 performers from backtest (Jan-Nov 2025)
-        # These assets showed best win rate, drawdown control, and profit factor
-        if self.whitelist_assets is None:
-            self.whitelist_assets = [
-                "SPX500_USD",  # S&P 500 - Best overall performance
-                "NAS100_USD",  # Nasdaq 100 - Strong trending behavior
-                "AUD_NZD",     # Low volatility, mean-reverting
-                "GBP_JPY",     # High R-multiples when setup is clean
-                "USD_JPY",     # Excellent liquidity, tight spreads
-                "XAU_USD",     # Gold - Safe haven moves
-                "CAD_JPY",     # Strong trending characteristics
-                "CHF_JPY",     # Good for range-bound strategies
-                "GBP_CAD",     # Clean structure, good R:R
-                "EUR_GBP",     # Tight ranges, good for scalping
-            ]
+    # Top 10 performers from backtest (Jan-Nov 2025)
+    # These assets showed best win rate, drawdown control, and profit factor
+    whitelist_assets: List[str] = field(default_factory=lambda: [
+        "SPX500_USD",  # S&P 500 - Best overall performance
+        "NAS100_USD",  # Nasdaq 100 - Strong trending behavior
+        "AUD_NZD",     # Low volatility, mean-reverting
+        "GBP_JPY",     # High R-multiples when setup is clean
+        "USD_JPY",     # Excellent liquidity, tight spreads
+        "XAU_USD",     # Gold - Safe haven moves
+        "CAD_JPY",     # Strong trending characteristics
+        "CHF_JPY",     # Good for range-bound strategies
+        "GBP_CAD",     # Clean structure, good R:R
+        "EUR_GBP",     # Tight ranges, good for scalping
+    ])
     
     def get_risk_pct(self, daily_loss_pct: float, total_dd_pct: float) -> float:
         """
