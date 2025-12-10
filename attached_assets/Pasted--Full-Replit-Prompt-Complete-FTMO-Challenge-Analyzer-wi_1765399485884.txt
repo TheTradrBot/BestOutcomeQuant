@@ -1,0 +1,1313 @@
+## Full Replit Prompt:  Complete FTMO Challenge Analyzer with Self-Optimizing Loop
+
+### Objective
+Create a comprehensive backtesting and **self-optimizing system** that: 
+
+1. **Backtests `main_live_bot. py`** for the entire period **Jan 2025 - Nov 2025**
+2. **Runs continuous FTMO challenges** (Step 1 + Step 2 = 1 complete challenge)
+3. **Starts new challenges** automatically after passing both steps
+4. **Tracks ALL trades** with complete entry/exit data validated against Dukascopy price data
+5. **Generates detailed CSV reports** with all trade details, TP/SL hits, and dates
+6. **Analyzes results** after each backtest run
+7. **If goals not met**:  Automatically modifies `main_live_bot.py` parameters, updates the backtest configuration to match, and reruns the entire backtest
+8. **Loops until achieving**:  **Minimum 14 complete challenges passed, Maximum 2 challenges failed**
+9. **Shows total earnings potential** from a $10,000 account over 11 months
+
+---
+
+### Current Problems to Fix
+
+**Problem 1: Too Few Trades Generated**
+- Current output shows only **183 trades** across 34 symbols over 11 months
+- This is far too few to complete 14+ challenges
+- Many symbols show 0-3 trades (e.g., XAU_USD:  0 trades, BTC_USD: 0 trades)
+- Need **1,000+ trades** to properly test sequential challenges
+
+**Problem 2: Only 2 Challenges Tested**
+- All 183 trades are consumed in just 2 challenge attempts
+- Challenge #1 passes, Challenge #2 fails at Step 2
+- System stops instead of continuing with more challenges
+
+**Problem 3: Optimizer Doesn't Actually Modify main_live_bot. py**
+- Current optimizer only modifies in-memory config
+- Changes are lost between runs
+- Need to actually write changes to `main_live_bot.py` and related config files
+
+**Problem 4: No Feedback Loop**
+- System runs once and stops
+- Doesn't analyze WHY challenges failed
+- Doesn't automatically adjust and retest
+
+---
+
+### FTMO Challenge Rules (2-Step Challenge)
+
+#### Step 1 Requirements:
+- **Profit Target**: 10% of $10,000 = **$1,000 profit**
+- **Maximum Daily Loss**: 5% of $10,000 = **$500 max loss per day**
+- **Maximum Drawdown**: 10% of $10,000 = **$1,000 total drawdown limit**
+- **Minimum Trading Days**: 4 days
+- **Status**: Must PASS to continue to Step 2
+
+#### Step 2 Requirements:
+- **Profit Target**: 5% of Step 1 ending balance (e.g., 5% of $11,000 = **$550 profit**)
+- **Maximum Daily Loss**:  5% of Step 1 ending balance
+- **Maximum Drawdown**: 10% of Step 1 ending balance
+- **Minimum Trading Days**:  4 days
+- **Status**: Must PASS to complete 1 full challenge
+
+**1 Complete Challenge = Pass BOTH Step 1 AND Step 2**
+
+---
+
+### Success Criteria
+
+The system MUST achieve: 
+- ✅ **Minimum 14 complete challenges PASSED** (both steps each)
+- ✅ **Maximum 2 complete challenges FAILED** (either step fails)
+- ✅ If criteria not met → **Modify main_live_bot.py** → **Update backtest config** → **Rerun backtest** → Repeat until success
+
+---
+
+### Complete Implementation
+
+#### File 1: `ftmo_challenge_analyzer.py` (Main Entry Point)
+
+```python
+#!/usr/bin/env python3
+"""
+Ultimate FTMO Challenge Performance Analyzer - Jan 2025 to Nov 2025
+
+This module provides a comprehensive backtesting and self-optimizing system that:
+1. Backtests main_live_bot.py for the entire period Jan 2025 - Nov 2025
+2. Runs continuous FTMO challenges (Step 1 + Step 2 = 1 complete challenge)
+3. Tracks ALL trades with complete entry/exit data validated against Dukascopy
+4. Generates detailed CSV reports with all trade details
+5. Self-optimizes by MODIFYING main_live_bot.py until achieving targets
+6. Target:  Minimum 14 challenges passed, Maximum 2 failed
+7. Shows total earnings potential from a $10,000 account over 11 months
+"""
+
+import json
+import csv
+import os
+import re
+import shutil
+from dataclasses import dataclass, field, asdict
+from datetime import datetime, date, timedelta, timezone
+from pathlib import Path
+from typing import List, Dict, Optional, Tuple, Any
+import pandas as pd
+
+from strategy_core import (
+    StrategyParams,
+    Trade,
+    Signal,
+    compute_confluence,
+    simulate_trades,
+    _infer_trend,
+    _pick_direction_from_bias,
+    get_default_params,
+)
+
+from data import get_ohlcv as get_ohlcv_api
+from ftmo_config import FTMO_CONFIG, FTMO10KConfig, get_pip_size, get_sl_limits
+from config import FOREX_PAIRS, METALS, INDICES, CRYPTO_ASSETS
+from tradr.data. dukascopy import DukascopyDownloader
+
+OUTPUT_DIR = Path("ftmo_analysis_output")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+# Backup directory for original files before modification
+BACKUP_DIR = Path("ftmo_optimization_backups")
+BACKUP_DIR.mkdir(exist_ok=True)
+
+
+@dataclass
+class BacktestTrade:
+    """Extended trade data for FTMO challenge analysis."""
+    trade_num: int
+    challenge_num: int
+    challenge_step: int
+    symbol: str
+    direction: str
+    confluence_score: int
+    entry_date: datetime
+    entry_price: float
+    stop_loss:  float
+    tp1_price: float
+    tp2_price: Optional[float]
+    tp3_price: Optional[float]
+    exit_date: datetime
+    exit_price: float
+    tp1_hit: bool = False
+    tp1_hit_date: Optional[datetime] = None
+    tp2_hit: bool = False
+    tp2_hit_date: Optional[datetime] = None
+    tp3_hit: bool = False
+    tp3_hit_date: Optional[datetime] = None
+    sl_hit: bool = False
+    sl_hit_date: Optional[datetime] = None
+    exit_reason: str = ""
+    r_multiple: float = 0.0
+    profit_loss_usd:  float = 0.0
+    result: str = ""
+    risk_pips: float = 0.0
+    holding_time_hours: float = 0.0
+    price_validated: bool = False
+    validation_notes: str = ""
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "Trade #": self.trade_num,
+            "Challenge #": self.challenge_num,
+            "Challenge Step": self.challenge_step,
+            "Symbol": self.symbol,
+            "Direction": self.direction,
+            "Confluence Score":  f"{self.confluence_score}/7",
+            "Entry Date":  self.entry_date.strftime("%Y-%m-%d %H:%M:%S") if self.entry_date else "",
+            "Entry Price": self.entry_price,
+            "Stop Loss Price": self.stop_loss,
+            "TP1 Price":  self.tp1_price,
+            "TP2 Price":  self.tp2_price or "",
+            "TP3 Price": self.tp3_price or "",
+            "Exit Date": self.exit_date.strftime("%Y-%m-%d %H:%M:%S") if self.exit_date else "",
+            "Exit Price": self.exit_price,
+            "TP1 Hit? ": f"YES ({self.tp1_hit_date.strftime('%Y-%m-%d')})" if self.tp1_hit and self.tp1_hit_date else "NO",
+            "TP2 Hit?": f"YES ({self.tp2_hit_date.strftime('%Y-%m-%d')})" if self.tp2_hit and self.tp2_hit_date else "NO",
+            "TP3 Hit?": f"YES ({self. tp3_hit_date.strftime('%Y-%m-%d')})" if self.tp3_hit and self.tp3_hit_date else "NO",
+            "SL Hit?": f"YES ({self.sl_hit_date.strftime('%Y-%m-%d')})" if self.sl_hit and self.sl_hit_date else "NO",
+            "Final Exit Reason": self.exit_reason,
+            "R Multiple": f"{self.r_multiple:+.2f}R",
+            "Profit/Loss USD": f"${self.profit_loss_usd:+. 2f}",
+            "Result": self.result,
+            "Risk Pips": f"{self.risk_pips:. 1f}",
+            "Holding Time (hours)": f"{self.holding_time_hours:.1f}",
+            "Price Data Validated? ": "YES" if self.price_validated else "NO",
+            "Validation Notes": self.validation_notes,
+        }
+
+
+@dataclass
+class StepResult:
+    """Result of a single FTMO challenge step."""
+    step_num: int
+    passed: bool
+    starting_balance: float
+    ending_balance: float
+    profit_pct: float
+    max_daily_loss_pct: float
+    max_drawdown_pct: float
+    trading_days: int
+    trades_count: int
+    trades:  List[BacktestTrade] = field(default_factory=list)
+    failure_reason: str = ""
+    
+    def to_dict(self) -> Dict:
+        return {
+            "step_num": self.step_num,
+            "passed": self. passed,
+            "starting_balance": self.starting_balance,
+            "ending_balance": self. ending_balance,
+            "profit_pct": self.profit_pct,
+            "max_daily_loss_pct": self.max_daily_loss_pct,
+            "max_drawdown_pct": self.max_drawdown_pct,
+            "trading_days": self. trading_days,
+            "trades_count": self.trades_count,
+            "failure_reason": self.failure_reason,
+        }
+
+
+@dataclass
+class ChallengeResult:
+    """Result of a complete FTMO challenge (Step 1 + Step 2)."""
+    challenge_num: int
+    status: str
+    failed_at:  Optional[str]
+    step1: Optional[StepResult]
+    step2: Optional[StepResult]
+    total_profit_usd: float = 0.0
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    
+    def to_dict(self) -> Dict:
+        return {
+            "challenge_num": self.challenge_num,
+            "status": self.status,
+            "failed_at":  self.failed_at,
+            "step1": self.step1. to_dict() if self.step1 else None,
+            "step2": self.step2.to_dict() if self.step2 else None,
+            "total_profit_usd": self.total_profit_usd,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+        }
+
+
+class DukascopyValidator:
+    """Validates trade prices against Dukascopy historical data."""
+    
+    def __init__(self):
+        self.validation_cache = {}
+        self.downloader = DukascopyDownloader()
+        
+    def _get_candle_for_date(self, symbol: str, trade_date: datetime) -> Optional[Dict]:
+        """Fetch OHLCV candle data for a specific date from Dukascopy."""
+        cache_key = f"{symbol}_{trade_date.date()}"
+        
+        if cache_key in self.validation_cache:
+            return self.validation_cache[cache_key]
+        
+        try:
+            trade_day = trade_date.date() if hasattr(trade_date, 'date') else trade_date
+            ohlcv_data = self.downloader.get_ohlcv(
+                symbol=symbol,
+                start_date=trade_day,
+                end_date=trade_day,
+                timeframe="D",
+                use_cache=True
+            )
+            
+            if ohlcv_data:
+                self.validation_cache[cache_key] = ohlcv_data[0]
+                return ohlcv_data[0]
+        except Exception as e:
+            print(f"[DukascopyValidator] Error fetching data for {symbol} on {trade_date}: {e}")
+        
+        return None
+    
+    def _price_within_candle(self, price: float, candle: Dict, tolerance: float = 0.0) -> bool:
+        """Check if price was achievable within the candle's high/low range."""
+        if not candle:
+            return True
+        
+        # Use 'high' and 'low' fields - these are the correct price extremes
+        high = candle.get("high", 0)
+        low = candle.get("low", 0)
+        
+        return (low - tolerance) <= price <= (high + tolerance)
+    
+    def validate_trade(self, trade: BacktestTrade, symbol: str) -> Tuple[bool, str]:
+        """
+        Validate that trade entry/exit prices align with actual Dukascopy market data.
+        
+        Checks: 
+        1. Entry price was achievable within the candle high/low at entry_date
+        2. Exit price was achievable within the candle high/low at exit_date
+        3. SL/TP levels were reachable at the recorded dates
+        
+        Uses 'high' and 'low' candle fields (not 'max') for price validation.
+        """
+        notes = []
+        is_valid = True
+        
+        try:
+            pip_size = get_pip_size(symbol)
+            tolerance_pips = 10
+            tolerance = tolerance_pips * pip_size
+            
+            # Basic sanity checks
+            if trade.entry_price <= 0:
+                notes.append("Invalid entry price")
+                is_valid = False
+            
+            if trade.stop_loss <= 0:
+                notes.append("Invalid stop loss")
+                is_valid = False
+            
+            # Direction validation
+            if trade.direction. upper() == "BULLISH":
+                if trade.stop_loss >= trade.entry_price:
+                    notes.append("SL above entry for bullish trade")
+                    is_valid = False
+            else:
+                if trade.stop_loss <= trade. entry_price:
+                    notes.append("SL below entry for bearish trade")
+                    is_valid = False
+            
+            # Validate entry price against Dukascopy candle high/low
+            entry_candle = self._get_candle_for_date(symbol, trade.entry_date)
+            if entry_candle:
+                if not self._price_within_candle(trade.entry_price, entry_candle, tolerance):
+                    candle_high = entry_candle.get('high', 0)
+                    candle_low = entry_candle.get('low', 0)
+                    notes.append(f"Entry price {trade.entry_price:. 5f} outside candle range [low={candle_low:.5f}, high={candle_high:. 5f}]")
+                    is_valid = False
+                else:
+                    notes.append("Entry price validated against Dukascopy high/low")
+            
+            # Validate exit price against Dukascopy candle high/low
+            exit_candle = self._get_candle_for_date(symbol, trade.exit_date)
+            if exit_candle:
+                if not self._price_within_candle(trade.exit_price, exit_candle, tolerance):
+                    candle_high = exit_candle.get('high', 0)
+                    candle_low = exit_candle.get('low', 0)
+                    notes.append(f"Exit price {trade.exit_price:.5f} outside candle range [low={candle_low:.5f}, high={candle_high:.5f}]")
+                    is_valid = False
+                else:
+                    notes.append("Exit price validated against Dukascopy high/low")
+            
+            # Validate SL hit date if applicable
+            if trade.sl_hit and trade.sl_hit_date:
+                sl_candle = self._get_candle_for_date(symbol, trade.sl_hit_date)
+                if sl_candle:
+                    if not self._price_within_candle(trade.stop_loss, sl_candle, tolerance):
+                        notes.append(f"SL price {trade.stop_loss:.5f} not reachable on recorded SL hit date")
+                        is_valid = False
+                    else: 
+                        notes.append("SL hit validated against Dukascopy high/low")
+            
+            # Validate TP1 hit date if applicable
+            if trade.tp1_hit and trade.tp1_hit_date:
+                tp1_candle = self._get_candle_for_date(symbol, trade.tp1_hit_date)
+                if tp1_candle: 
+                    if not self._price_within_candle(trade.tp1_price, tp1_candle, tolerance):
+                        notes.append(f"TP1 price {trade.tp1_price:.5f} not reachable on recorded TP1 hit date")
+                    else:
+                        notes.append("TP1 hit validated against Dukascopy high/low")
+            
+            # Validate TP2 hit date if applicable
+            if trade.tp2_hit and trade.tp2_hit_date and trade.tp2_price:
+                tp2_candle = self._get_candle_for_date(symbol, trade. tp2_hit_date)
+                if tp2_candle: 
+                    if not self._price_within_candle(trade. tp2_price, tp2_candle, tolerance):
+                        notes.append(f"TP2 price {trade.tp2_price:.5f} not reachable on recorded TP2 hit date")
+                    else: 
+                        notes.append("TP2 hit validated against Dukascopy high/low")
+            
+            # Validate TP3 hit date if applicable
+            if trade.tp3_hit and trade.tp3_hit_date and trade.tp3_price:
+                tp3_candle = self._get_candle_for_date(symbol, trade.tp3_hit_date)
+                if tp3_candle: 
+                    if not self._price_within_candle(trade.tp3_price, tp3_candle, tolerance):
+                        notes.append(f"TP3 price {trade.tp3_price:.5f} not reachable on recorded TP3 hit date")
+                    else: 
+                        notes.append("TP3 hit validated against Dukascopy high/low")
+            
+            # Verify R-multiple calculation
+            risk = abs(trade.entry_price - trade.stop_loss)
+            if risk > 0:
+                if trade.direction.upper() == "BULLISH":
+                    actual_r = (trade.exit_price - trade.entry_price) / risk
+                else:
+                    actual_r = (trade.entry_price - trade.exit_price) / risk
+                
+                if abs(actual_r - trade.r_multiple) > 0.5:
+                    notes.append(f"R-multiple mismatch: calculated={actual_r:.2f}R, reported={trade.r_multiple:.2f}R")
+            
+            # Clean up notes if all validations passed
+            if is_valid and not any("outside" in n. lower() or "mismatch" in n.lower() or "not reachable" in n.lower() for n in notes):
+                notes = ["All price levels validated successfully against Dukascopy high/low data"]
+                
+        except Exception as e: 
+            notes.append(f"Validation error: {str(e)}")
+            is_valid = False
+        
+        return is_valid, "; ".join(notes)
+    
+    def validate_all_trades(self, trades: List[BacktestTrade]) -> Dict: 
+        """Validate all trades against Dukascopy data and generate report."""
+        total = len(trades)
+        perfect_match = 0
+        minor_discrepancies = 0
+        major_issues = 0
+        suspicious = 0
+        
+        print(f"\n[DukascopyValidator] Validating {total} trades against Dukascopy historical data...")
+        print(f"[DukascopyValidator] Using candle 'high' and 'low' fields for price validation")
+        
+        for i, trade in enumerate(trades):
+            if (i + 1) % 50 == 0:
+                print(f"  Validated {i + 1}/{total} trades...")
+            
+            is_valid, notes = self.validate_trade(trade, trade.symbol)
+            trade.price_validated = is_valid
+            trade.validation_notes = notes
+            
+            if is_valid and "successfully" in notes. lower():
+                perfect_match += 1
+            elif is_valid: 
+                minor_discrepancies += 1
+            else:
+                if "suspicious" in notes.lower() or "fabricated" in notes.lower():
+                    suspicious += 1
+                else:
+                    major_issues += 1
+        
+        print(f"\n[DukascopyValidator] Validation complete:")
+        print(f"  Perfect matches: {perfect_match}")
+        print(f"  Minor discrepancies: {minor_discrepancies}")
+        print(f"  Major issues: {major_issues}")
+        print(f"  Suspicious trades: {suspicious}")
+        
+        return {
+            "total_validated": total,
+            "perfect_match": perfect_match,
+            "minor_discrepancies": minor_discrepancies,
+            "major_issues": major_issues,
+            "suspicious_trades": suspicious,
+        }
+
+
+class ChallengeSequencer:
+    """
+    Manages sequential FTMO challenges throughout Jan-Nov 2025.
+    Starts new challenge immediately after completing Step 1 + Step 2.
+    """
+    
+    ACCOUNT_SIZE = 10000.0
+    STEP1_PROFIT_TARGET_PCT = 10.0
+    STEP2_PROFIT_TARGET_PCT = 5.0
+    MAX_DAILY_LOSS_PCT = 5.0
+    MAX_DRAWDOWN_PCT = 10.0
+    MIN_TRADING_DAYS = 4
+    
+    def __init__(self, trades: List[Trade], start_date: datetime, end_date: datetime):
+        self.raw_trades = sorted(trades, key=lambda t: t.entry_date)
+        self.start_date = start_date
+        self.end_date = end_date
+        self.challenges_passed = 0
+        self.challenges_failed = 0
+        self.all_challenge_results:  List[ChallengeResult] = []
+        self.all_backtest_trades: List[BacktestTrade] = []
+        self.trade_counter = 0
+    
+    def _convert_trade(
+        self, 
+        trade: Trade, 
+        challenge_num: int, 
+        step_num: int,
+        risk_per_trade_usd: float
+    ) -> BacktestTrade:
+        """Convert strategy_core Trade to BacktestTrade with additional fields."""
+        self.trade_counter += 1
+        
+        entry_dt = trade.entry_date
+        exit_dt = trade.exit_date
+        
+        if isinstance(entry_dt, str):
+            try:
+                entry_dt = datetime.fromisoformat(entry_dt. replace("Z", "+00:00"))
+            except: 
+                entry_dt = datetime. now()
+        
+        if isinstance(exit_dt, str):
+            try:
+                exit_dt = datetime.fromisoformat(exit_dt.replace("Z", "+00:00"))
+            except: 
+                exit_dt = datetime. now()
+        
+        pip_size = get_pip_size(trade.symbol)
+        risk_pips = abs(trade.entry_price - trade.stop_loss) / pip_size if pip_size > 0 else 0
+        
+        holding_hours = 0.0
+        if entry_dt and exit_dt: 
+            delta = exit_dt - entry_dt
+            holding_hours = delta. total_seconds() / 3600
+        
+        profit_usd = trade.rr * risk_per_trade_usd
+        
+        result = "WIN" if trade.is_winner else "LOSS"
+        if abs(trade.rr) < 0.1:
+            result = "BREAKEVEN"
+        
+        tp1_hit = "TP1" in trade.exit_reason
+        tp2_hit = "TP2" in trade.exit_reason
+        tp3_hit = "TP3" in trade.exit_reason
+        sl_hit = trade.exit_reason == "SL"
+        
+        return BacktestTrade(
+            trade_num=self.trade_counter,
+            challenge_num=challenge_num,
+            challenge_step=step_num,
+            symbol=trade.symbol,
+            direction=trade.direction. upper(),
+            confluence_score=trade.confluence_score,
+            entry_date=entry_dt,
+            entry_price=trade.entry_price,
+            stop_loss=trade.stop_loss,
+            tp1_price=trade.tp1 or 0.0,
+            tp2_price=trade.tp2,
+            tp3_price=trade.tp3,
+            exit_date=exit_dt,
+            exit_price=trade.exit_price,
+            tp1_hit=tp1_hit,
+            tp1_hit_date=exit_dt if tp1_hit else None,
+            tp2_hit=tp2_hit,
+            tp2_hit_date=exit_dt if tp2_hit else None,
+            tp3_hit=tp3_hit,
+            tp3_hit_date=exit_dt if tp3_hit else None,
+            sl_hit=sl_hit,
+            sl_hit_date=exit_dt if sl_hit else None,
+            exit_reason=trade.exit_reason,
+            r_multiple=trade.rr,
+            profit_loss_usd=profit_usd,
+            result=result,
+            risk_pips=risk_pips,
+            holding_time_hours=holding_hours,
+        )
+    
+    def _run_step(
+        self,
+        trades: List[Trade],
+        step_num: int,
+        starting_balance: float,
+        profit_target_pct: float,
+        challenge_num: int,
+    ) -> Tuple[StepResult, int]:
+        """
+        Run a single challenge step. 
+        
+        Returns:
+            Tuple of (StepResult, number of trades used)
+        """
+        balance = starting_balance
+        peak_balance = starting_balance
+        daily_start_balance = starting_balance
+        current_day = None
+        trading_days = set()
+        max_daily_loss_pct = 0.0
+        max_drawdown_pct = 0.0
+        
+        step_trades:  List[BacktestTrade] = []
+        trades_used = 0
+        
+        profit_target = starting_balance * (1 + profit_target_pct / 100)
+        max_daily_loss = starting_balance * (self.MAX_DAILY_LOSS_PCT / 100)
+        max_total_dd = starting_balance * (self. MAX_DRAWDOWN_PCT / 100)
+        
+        risk_per_trade_pct = FTMO_CONFIG.risk_per_trade_pct
+        risk_per_trade_usd = starting_balance * (risk_per_trade_pct / 100)
+        
+        for trade in trades:
+            trades_used += 1
+            
+            trade_date = trade.entry_date
+            if isinstance(trade_date, str):
+                try:
+                    trade_date = datetime.fromisoformat(trade_date.replace("Z", "+00:00"))
+                except:
+                    trade_date = datetime.now()
+            
+            trade_day = trade_date.date() if hasattr(trade_date, 'date') else trade_date
+            
+            # Track daily P&L reset
+            if current_day is None:
+                current_day = trade_day
+                daily_start_balance = balance
+            elif trade_day != current_day: 
+                current_day = trade_day
+                daily_start_balance = balance
+            
+            trading_days.add(trade_day)
+            
+            # Convert and track trade
+            bt_trade = self._convert_trade(trade, challenge_num, step_num, risk_per_trade_usd)
+            step_trades. append(bt_trade)
+            self.all_backtest_trades. append(bt_trade)
+            
+            # Update balance
+            balance += bt_trade.profit_loss_usd
+            
+            # Update peak balance
+            if balance > peak_balance:
+                peak_balance = balance
+            
+            # Calculate daily loss
+            daily_loss = daily_start_balance - balance
+            daily_loss_pct = (daily_loss / starting_balance) * 100
+            if daily_loss_pct > max_daily_loss_pct: 
+                max_daily_loss_pct = daily_loss_pct
+            
+            # Calculate drawdown from peak
+            drawdown = peak_balance - balance
+            drawdown_pct = (drawdown / starting_balance) * 100
+            if drawdown_pct > max_drawdown_pct: 
+                max_drawdown_pct = drawdown_pct
+            
+            # Check daily loss limit breach
+            if daily_loss >= max_daily_loss:
+                return StepResult(
+                    step_num=step_num,
+                    passed=False,
+                    starting_balance=starting_balance,
+                    ending_balance=balance,
+                    profit_pct=((balance - starting_balance) / starting_balance) * 100,
+                    max_daily_loss_pct=max_daily_loss_pct,
+                    max_drawdown_pct=max_drawdown_pct,
+                    trading_days=len(trading_days),
+                    trades_count=len(step_trades),
+                    trades=step_trades,
+                    failure_reason=f"Daily loss limit breached: {daily_loss_pct:.2f}% >= {self.MAX_DAILY_LOSS_PCT}%",
+                ), trades_used
+            
+            # Check total drawdown limit breach
+            if drawdown >= max_total_dd:
+                return StepResult(
+                    step_num=step_num,
+                    passed=False,
+                    starting_balance=starting_balance,
+                    ending_balance=balance,
+                    profit_pct=((balance - starting_balance) / starting_balance) * 100,
+                    max_daily_loss_pct=max_daily_loss_pct,
+                    max_drawdown_pct=max_drawdown_pct,
+                    trading_days=len(trading_days),
+                    trades_count=len(step_trades),
+                    trades=step_trades,
+                    failure_reason=f"Total drawdown limit breached: {drawdown_pct:.2f}% >= {self.MAX_DRAWDOWN_PCT}%",
+                ), trades_used
+            
+            # Check if profit target reached with minimum trading days
+            if balance >= profit_target and len(trading_days) >= self.MIN_TRADING_DAYS:
+                return StepResult(
+                    step_num=step_num,
+                    passed=True,
+                    starting_balance=starting_balance,
+                    ending_balance=balance,
+                    profit_pct=((balance - starting_balance) / starting_balance) * 100,
+                    max_daily_loss_pct=max_daily_loss_pct,
+                    max_drawdown_pct=max_drawdown_pct,
+                    trading_days=len(trading_days),
+                    trades_count=len(step_trades),
+                    trades=step_trades,
+                ), trades_used
+        
+        # All trades consumed - check final status
+        profit_pct = ((balance - starting_balance) / starting_balance) * 100
+        passed = profit_pct >= profit_target_pct and len(trading_days) >= self.MIN_TRADING_DAYS
+        
+        failure_reason = ""
+        if not passed:
+            if len(trading_days) < self.MIN_TRADING_DAYS:
+                failure_reason = f"Insufficient trading days: {len(trading_days)} < {self.MIN_TRADING_DAYS}"
+            else:
+                failure_reason = f"Profit target not reached:  {profit_pct:.2f}% < {profit_target_pct}%"
+        
+        return StepResult(
+            step_num=step_num,
+            passed=passed,
+            starting_balance=starting_balance,
+            ending_balance=balance,
+            profit_pct=profit_pct,
+            max_daily_loss_pct=max_daily_loss_pct,
+            max_drawdown_pct=max_drawdown_pct,
+            trading_days=len(trading_days),
+            trades_count=len(step_trades),
+            trades=step_trades,
+            failure_reason=failure_reason,
+        ), trades_used
+    
+    def run_sequential_challenges(self) -> Dict:
+        """
+        Run challenges sequentially through all 11 months.
+        
+        Process: 
+        1. Start Challenge #1 with first trade
+        2. Run Step 1 until profit target OR failure
+        3. If Step 1 passes, continue to Step 2 with next trades
+        4. If Step 2 passes, log PASS and start Challenge #2 with FRESH $10,000
+        5. If either step fails, log FAIL and start new Challenge with FRESH $10,000
+        6. Continue until all trades exhausted
+        
+        Returns complete breakdown of all challenges. 
+        """
+        current_challenge = 1
+        trade_index = 0
+        
+        print(f"\n{'='*80}")
+        print(f"SEQUENTIAL CHALLENGE SIMULATION")
+        print(f"Total trades available: {len(self.raw_trades)}")
+        print(f"Period: {self.start_date. strftime('%Y-%m-%d')} to {self.end_date.strftime('%Y-%m-%d')}")
+        print(f"{'='*80}")
+        
+        while trade_index < len(self.raw_trades):
+            print(f"\n{'='*80}")
+            print(f"STARTING CHALLENGE #{current_challenge}")
+            print(f"Remaining trades: {len(self.raw_trades) - trade_index}")
+            print(f"{'='*80}")
+            
+            remaining_trades = self.raw_trades[trade_index:]
+            if not remaining_trades:
+                break
+            
+            challenge_start = remaining_trades[0].entry_date
+            
+            # Run Step 1 - Always start with fresh $10,000
+            step1_result, trades_used = self._run_step(
+                trades=remaining_trades,
+                step_num=1,
+                starting_balance=self.ACCOUNT_SIZE,
+                profit_target_pct=self.STEP1_PROFIT_TARGET_PCT,
+                challenge_num=current_challenge,
+            )
+            
+            trade_index += trades_used
+            
+            if not step1_result.passed:
+                print(f"❌ Challenge #{current_challenge} FAILED at Step 1: {step1_result.failure_reason}")
+                print(f"   Trades used: {trades_used}, Final balance: ${step1_result.ending_balance:,.2f}")
+                self.challenges_failed += 1
+                
+                challenge_end = step1_result.trades[-1].exit_date if step1_result.trades else challenge_start
+                
+                self.all_challenge_results.append(ChallengeResult(
+                    challenge_num=current_challenge,
+                    status="FAILED",
+                    failed_at="Step 1",
+                    step1=step1_result,
+                    step2=None,
+                    total_profit_usd=step1_result.ending_balance - step1_result.starting_balance,
+                    start_date=challenge_start,
+                    end_date=challenge_end,
+                ))
+                current_challenge += 1
+                continue
+            
+            print(f"✅ Step 1 PASSED - Continuing to Step 2")
+            print(f"   Profit:  {step1_result.profit_pct:.2f}%, Balance: ${step1_result.ending_balance:,.2f}")
+            print(f"   Trades used:  {trades_used}, Trading days: {step1_result.trading_days}")
+            
+            # Check if more trades available for Step 2
+            remaining_trades = self.raw_trades[trade_index:]
+            if not remaining_trades:
+                print(f"⚠️ No more trades available for Step 2")
+                self.challenges_passed += 1
+                self.all_challenge_results.append(ChallengeResult(
+                    challenge_num=current_challenge,
+                    status="PASSED",
+                    failed_at=None,
+                    step1=step1_result,
+                    step2=None,
+                    total_profit_usd=step1_result.ending_balance - step1_result.starting_balance,
+                    start_date=challenge_start,
+                    end_date=step1_result.trades[-1]. exit_date if step1_result.trades else challenge_start,
+                ))
+                break
+            
+            # Run Step 2 - Start with Step 1 ending balance
+            step2_result, trades_used = self._run_step(
+                trades=remaining_trades,
+                step_num=2,
+                starting_balance=step1_result.ending_balance,
+                profit_target_pct=self.STEP2_PROFIT_TARGET_PCT,
+                challenge_num=current_challenge,
+            )
+            
+            trade_index += trades_used
+            
+            challenge_end = step2_result. trades[-1].exit_date if step2_result.trades else challenge_start
+            
+            if not step2_result.passed:
+                print(f"❌ Challenge #{current_challenge} FAILED at Step 2: {step2_result.failure_reason}")
+                print(f"   Trades used: {trades_used}, Final balance: ${step2_result.ending_balance:,.2f}")
+                self.challenges_failed += 1
+                self.all_challenge_results.append(ChallengeResult(
+                    challenge_num=current_challenge,
+                    status="FAILED",
+                    failed_at="Step 2",
+                    step1=step1_result,
+                    step2=step2_result,
+                    total_profit_usd=(step1_result.ending_balance - step1_result.starting_balance) + 
+                                    (step2_result.ending_balance - step2_result.starting_balance),
+                    start_date=challenge_start,
+                    end_date=challenge_end,
+                ))
+            else:
+                print(f"🏆 Challenge #{current_challenge} FULLY PASSED!")
+                print(f"   Step 1: +{step1_result.profit_pct:.2f}%")
+                print(f"   Step 2: +{step2_result.profit_pct:. 2f}%")
+                print(f"   Total profit: ${(step1_result.ending_balance - self.ACCOUNT_SIZE) + (step2_result.ending_balance - step1_result.ending_balance):,.2f}")
+                self.challenges_passed += 1
+                
+                total_profit = (step1_result.ending_balance - step1_result.starting_balance) + \
+                              (step2_result.ending_balance - step2_result.starting_balance)
+                
+                self.all_challenge_results.append(ChallengeResult(
+                    challenge_num=current_challenge,
+                    status="PASSED",
+                    failed_at=None,
+                    step1=step1_result,
+                    step2=step2_result,
+                    total_profit_usd=total_profit,
+                    start_date=challenge_start,
+                    end_date=challenge_end,
+                ))
+            
+            current_challenge += 1
+        
+        print(f"\n{'='*80}")
+        print(f"CHALLENGE SIMULATION COMPLETE")
+        print(f"{'='*80}")
+        print(f"Total challenges attempted: {current_challenge - 1}")
+        print(f"Challenges PASSED: {self.challenges_passed}")
+        print(f"Challenges FAILED: {self.challenges_failed}")
+        print(f"Total trades processed: {len(self.all_backtest_trades)}")
+        
+        return {
+            "total_challenges_attempted": current_challenge - 1,
+            "challenges_passed":  self.challenges_passed,
+            "challenges_failed": self.challenges_failed,
+            "all_results": self.all_challenge_results,
+            "all_trades": self.all_backtest_trades,
+        }
+
+
+class MainLiveBotModifier: 
+    """
+    Modifies main_live_bot. py and related config files to optimize strategy parameters.
+    Creates backups before any modifications.
+    """
+    
+    def __init__(self):
+        self.main_bot_path = Path("main_live_bot.py")
+        self.ftmo_config_path = Path("ftmo_config.py")
+        self.strategy_core_path = Path("strategy_core.py")
+        self.modification_log:  List[Dict] = []
+        
+    def _backup_file(self, filepath: Path, iteration: int):
+        """Create backup of file before modification."""
+        if filepath.exists():
+            backup_name = f"{filepath.stem}_backup_iter{iteration}{filepath.suffix}"
+            backup_path = BACKUP_DIR / backup_name
+            shutil.copy(filepath, backup_path)
+            print(f"  Backed up {filepath} to {backup_path}")
+    
+    def _read_file(self, filepath: Path) -> str:
+        """Read file contents."""
+        if filepath.exists():
+            with open(filepath, 'r') as f:
+                return f.read()
+        return ""
+    
+    def _write_file(self, filepath: Path, content: str):
+        """Write content to file."""
+        with open(filepath, 'w') as f:
+            f.write(content)
+        print(f"  Modified {filepath}")
+    
+    def _update_numeric_value(self, content: str, pattern: str, new_value: float) -> str:
+        """Update a numeric value in file content using regex."""
+        # Pattern should capture the variable assignment
+        regex = re.compile(pattern, re.MULTILINE)
+        match = regex.search(content)
+        if match:
+            old_line = match.group(0)
+            # Replace the number in the matched line
+            new_line = re.sub(r'[\d.]+', str(new_value), old_line, count=1)
+            content = content.replace(old_line, new_line)
+        return content
+    
+    def modify_ftmo_config(self, changes: Dict, iteration: int) -> bool:
+        """
+        Modify ftmo_config.py with new parameter values.
+        
+        Args:
+            changes: Dict of parameter names to new values
+            iteration: Current optimization iteration number
+            
+        Returns:
+            True if modifications were made successfully
+        """
+        self._backup_file(self.ftmo_config_path, iteration)
+        
+        content = self._read_file(self.ftmo_config_path)
+        if not content:
+            print(f"  ERROR: Could not read {self.ftmo_config_path}")
+            return False
+        
+        modifications_made = []
+        
+        for param, new_value in changes.items():
+            if param == "risk_per_trade_pct":
+                # Look for:  risk_per_trade_pct:  float = 0.5
+                pattern = r'risk_per_trade_pct\s*[: =]\s*[\d.]+'
+                content = self._update_numeric_value(content, pattern, new_value)
+                modifications_made.append(f"risk_per_trade_pct -> {new_value}")
+                
+            elif param == "min_confluence_score":
+                pattern = r'min_confluence_score\s*[:=]\s*\d+'
+                content = self._update_numeric_value(content, pattern, int(new_value))
+                modifications_made.append(f"min_confluence_score -> {int(new_value)}")
+                
+            elif param == "max_concurrent_trades":
+                pattern = r'max_concurrent_trades\s*[:=]\s*\d+'
+                content = self._update_numeric_value(content, pattern, int(new_value))
+                modifications_made.append(f"max_concurrent_trades -> {int(new_value)}")
+                
+            elif param == "max_cumulative_risk_pct":
+                pattern = r'max_cumulative_risk_pct\s*[:=]\s*[\d.]+'
+                content = self._update_numeric_value(content, pattern, new_value)
+                modifications_made.append(f"max_cumulative_risk_pct -> {new_value}")
+                
+            elif param == "daily_loss_warning_pct":
+                pattern = r'daily_loss_warning_pct\s*[:=]\s*[\d.]+'
+                content = self._update_numeric_value(content, pattern, new_value)
+                modifications_made.append(f"daily_loss_warning_pct -> {new_value}")
+                
+            elif param == "daily_loss_reduce_pct":
+                pattern = r'daily_loss_reduce_pct\s*[:=]\s*[\d.]+'
+                content = self._update_numeric_value(content, pattern, new_value)
+                modifications_made. append(f"daily_loss_reduce_pct -> {new_value}")
+                
+            elif param == "min_quality_factors":
+                pattern = r'min_quality_factors\s*[: =]\s*\d+'
+                content = self._update_numeric_value(content, pattern, int(new_value))
+                modifications_made.append(f"min_quality_factors -> {int(new_value)}")
+        
+        self._write_file(self.ftmo_config_path, content)
+        
+        self.modification_log.append({
+            "iteration": iteration,
+            "file":  str(self.ftmo_config_path),
+            "modifications":  modifications_made,
+            "timestamp": datetime.now().isoformat(),
+        })
+        
+        return True
+    
+    def modify_strategy_core(self, changes:  Dict, iteration: int) -> bool:
+        """
+        Modify strategy_core.py with new strategy parameters.
+        
+        Args:
+            changes: Dict of parameter names to new values
+            iteration: Current optimization iteration number
+            
+        Returns:
+            True if modifications were made successfully
+        """
+        self._backup_file(self.strategy_core_path, iteration)
+        
+        content = self._read_file(self.strategy_core_path)
+        if not content: 
+            print(f"  ERROR: Could not read {self.strategy_core_path}")
+            return False
+        
+        modifications_made = []
+        
+        for param, new_value in changes.items():
+            if param == "min_confluence": 
+                # Look for: min_confluence: int = 5
+                pattern = r'min_confluence\s*[:=]\s*\d+'
+                content = self._update_numeric_value(content, pattern, int(new_value))
+                modifications_made. append(f"min_confluence -> {int(new_value)}")
+                
+            elif param == "tp1_r_multiple":
+                pattern = r'tp1_r_multiple\s*[:=]\s*[\d.]+'
+                content = self._update_numeric_value(content, pattern, new_value)
+                modifications_made.append(f"tp1_r_multiple -> {new_value}")
+                
+            elif param == "tp2_r_multiple":
+                pattern = r'tp2_r_multiple\s*[:=]\s*[\d.]+'
+                content = self._update_numeric_value(content, pattern, new_value)
+                modifications_made.append(f"tp2_r_multiple -> {new_value}")
+                
+            elif param == "tp3_r_multiple":
+                pattern = r'tp3_r_multiple\s*[:=]\s*[\d.]+'
+                content = self._update_numeric_value(content, pattern, new_value)
+                modifications_made.append(f"tp3_r_multiple -> {new_value}")
+        
+        if modifications_made:
+            self._write_file(self.strategy_core_path, content)
+            
+            self.modification_log. append({
+                "iteration": iteration,
+                "file": str(self.strategy_core_path),
+                "modifications": modifications_made,
+                "timestamp": datetime. now().isoformat(),
+            })
+        
+        return True
+    
+    def modify_main_live_bot(self, changes:  Dict, iteration: int) -> bool:
+        """
+        Modify main_live_bot.py with new parameter values.
+        
+        Args:
+            changes: Dict of parameter names to new values
+            iteration: Current optimization iteration number
+            
+        Returns:
+            True if modifications were made successfully
+        """
+        self._backup_file(self.main_bot_path, iteration)
+        
+        content = self._read_file(self.main_bot_path)
+        if not content: 
+            print(f"  ERROR: Could not read {self.main_bot_path}")
+            return False
+        
+        modifications_made = []
+        
+        for param, new_value in changes.items():
+            if param == "min_confluence":
+                pattern = r'min_confluence\s*[:=]\s*\d+'
+                content = self._update_numeric_value(content, pattern, int(new_value))
+                modifications_made.append(f"min_confluence -> {int(new_value)}")
+                
+            elif param == "risk_percent":
+                pattern = r'risk_percent\s*[:=]\s*[\d.]+'
+                content = self._update_numeric_value(content, pattern, new_value)
+                modifications_made. append(f"risk_percent -> {new_value}")
+        
+        if modifications_made: 
+            self._write_file(self.main_bot_path, content)
+            
+            self.modification_log.append({
+                "iteration": iteration,
+                "file": str(self.main_bot_path),
+                "modifications":  modifications_made,
+                "timestamp": datetime.now().isoformat(),
+            })
+        
+        return True
+    
+    def apply_all_modifications(self, config_changes: Dict, strategy_changes: Dict, iteration: int) -> bool:
+        """Apply all modifications to relevant files."""
+        print(f"\n  Applying modifications for iteration {iteration}...")
+        
+        success = True
+        
+        if config_changes:
+            success = success and self.modify_ftmo_config(config_changes, iteration)
+        
+        if strategy_changes: 
+            success = success and self.modify_strategy_core(strategy_changes, iteration)
+            success = success and self.modify_main_live_bot(strategy_changes, iteration)
+        
+        return success
+    
+    def save_modification_log(self, filepath: Path = OUTPUT_DIR / "modification_log. json"):
+        """Save modification log to JSON file."""
+        with open(filepath, 'w') as f:
+            json.dump(self.modification_log, f, indent=2)
+        print(f"  Modification log saved to {filepath}")
+
+
+class PerformanceOptimizer:
+    """
+    Optimizes main_live_bot.py parameters if success criteria not met.
+    
+    Target:  >= 14 challenges passed, <= 2 challenges failed
+    
+    Actually modifies source files based on failure patterns,
+    then triggers a new backtest with the updated parameters.
+    """
+    
+    MIN_CHALLENGES_PASSED = 14
+    MAX_CHALLENGES_FAILED = 2
+    
+    def __init__(self, config:  Optional[FTMO10KConfig] = None):
+        self.optimization_log: List[Dict] = []
+        self.config = config if config else FTMO_CONFIG
+        self._original_config = self._snapshot_config()
+        self.file_modifier = MainLiveBotModifier()
+        self.best_result = None
+        self.best_passed = 0
+        self.best_failed = float('inf')
+    
+    def _snapshot_config(self) -> Dict:
+        """Take a snapshot of current config values."""
+        return {
+            "risk_per_trade_pct": self.config.risk_per_trade_pct,
+            "min_confluence_score": self.config.min_confluence_score,
+            "max_concurrent_trades": self.config.max_concurrent_trades,
+            "max_cumulative_risk_pct": self.config.max_cumulative_risk_pct,
+            "daily_loss_warning_pct": self.config.daily_loss_warning_pct,
+            "daily_loss_reduce_pct": self.config. daily_loss_reduce_pct,
+            "min_quality_factors": self.config.min_quality_factors,
+        }
+    
+    def check_success_criteria(self, results: Dict) -> bool:
+        """Check if results meet success criteria."""
+        passed = results["challenges_passed"]
+        failed = results["challenges_failed"]
+        
+        # Track best result
+        if passed > self. best_passed or (passed == self.best_passed and failed < self.best_failed):
+            self.best_passed = passed
+            self.best_failed = failed
+            self.best_result = results
+        
+        return passed >= self.MIN_CHALLENGES_PASSED and failed <= self.MAX_CHALLENGES_FAILED
+    
+    def analyze_failure_patterns(self, results: Dict) -> Dict:
+        """Analyze failure patterns to determine optimization strategy."""
+        all_results = results. get("all_results", [])
+        all_trades = results.get("all_trades", [])
+        
+        step1_failures = sum(1 for c in all_results if c. failed_at == "Step 1")
+        step2_failures = sum(1 for c in all_results if c.failed_at == "Step 2")
+        
+        dd_failures = 0
+        daily_loss_failures = 0
+        profit_failures = 0
+        
+        for challenge in all_results:
+            if challenge.status == "FAILED":
+                failure_reason = ""
+                if challenge.step1 and not challenge.step1.passed:
+                    failure_reason = challenge.step1.failure_reason
+                elif challenge.step2 and not challenge.step2.passed:
+                    failure_reason = challenge.step2.failure_reason
+                
+                if "drawdown" in failure_reason.lower():
+                    dd_failures += 1
+                elif "daily" in failure_reason.lower():
+                    daily_loss_failures += 1
+                elif "profit" in failure_reason.lower():
+                    profit_failures += 1
+        
+        # Calculate trade statistics
+        total_trades = len(all_trades)
+        wins = sum(1 for t in all_trades if t.result == "WIN")
+        win_rate = (wins / total_trades * 100) if total_trades > 0 else 0
+        avg_r = sum(t.r_multiple for t in all_trades) / total_trades if total_trades > 0 else 0
+        
+        # Check if we need more trades
+        trades_per_challenge = total_trades / max(1, len(all_results))
+        need_more_trades = trades_per_challenge < 15  # Target ~15 trades per challenge
+        
+        return {
+            "step1_failures": step1_failures,
+            "step2_failures": step2_failures,
+            "dd_failures": dd_failures,
+            "daily_loss_failures": daily_loss_failures,
+            "profit_failures": profit_failures,
+            "total_trades": total_trades,
+            "win_rate": win_rate,
+            "avg_r": avg_r,
+            "trades_per_challenge": trades_per_challenge,
+            "need_more_trades": need_more_trades,
+        }
+    
+    def determine_optimizations(self, patterns: Dict, iteration: int) -> Tuple[Dict, Dict]:
+        """
+        Determine what optimizations to apply based on failure patterns.
+        
+        Returns:
+            Tuple of (config_changes, strategy_changes)
+        """
+        config_changes = {}
+        strategy_changes = {}
+        
+        print(f"\n  Analyzing failure patterns for optimization...")
+        print(f"    Step 1 failures: {patterns['step1_failures']}")
+        print(f"    Step 2 failures:  {patterns['step2_failures']}")
+        print(f"    Drawdown failures: {patterns['dd_failures']}")
+        print(f"    Daily loss failures: {patterns['daily_loss_failures']}")
+        print(f"    Profit target failures: {patterns['profit_failures']}")
+        print(f"    Total trades: {patterns['total_trades']}")
+        print(f"    Win rate: {patterns['win_rate']:.1f}%")
+        print(f"    Avg R: {patterns['avg_r']:.2f}")
+        print(f"    Trades per challenge: {patterns['trades_per_challenge']:. 1f}")
+        
+        # Priority 1: If we need more trades, lower confluence
+        if patterns['need_more_trades'] or patterns['profit_failures'] > 2:
+            new_confluence = max(3, self.config.min_confluence_score - 1)
+            if new_confluence != self.config.min_confluence_score:
+                config_changes["min_confluence_score"] = new_confluence
+                strategy_changes["min_confluence"] = new_confluence
+                print(f"    -> Lowering min_confluence to {new_confluence} (need more trades)")
+            
+            new_quality = max(1, self.config.min_quality_factors - 1)
+            if new_quality != self.config.min_quality_factors:
+                config_changes["min_quality_factors"] = new_quality
+                print(f"    -> Lowering min_quality_factors to {new_quality}")
+        
+        # Priority 2: If drawdown or daily loss failures, reduce risk
+        if patterns['dd_failures'] > 0 or patterns['daily_loss_failures'] > 0:
+            new_risk = max(0.25, self.config.risk_per_trade_pct - 0.1)
+            if new_risk != self.config.risk_per_trade_pct: 
+                config_changes["risk_per_trade_pct"] = new_risk
+                strategy_changes["risk_percent"] = new_risk
+                print(f"    -> Lowering risk_per_trade to {new_risk}% (drawdown protection)")
+            
+            new_concurrent = max(1, self.config.max_concurrent_trades - 1)
+            if new_concurrent != self.config.max_concurrent_trades:
+                config_changes["max_concurrent_trades"] = new_concurrent
+                print(f"    -> Lowering max_concurrent_trades to {new_concurrent}")
+        
+        # Priority 3: If win rate is low, increase confluence (quality over quantity)
+        if patterns['win_rate'] < 45 and not patterns['need_more_trades']: 
+            new_confluence = min(7, self.config.min_confluence_score + 1)
+            if new_confluence != self.config.min_confluence_score:
+                config_changes["min_confluence_score"] = new_confluence
+                strategy_changes["min_confluence"] = new_confluence
+                print(f"    -> Raising min_confluence to {new_confluence} (improve win rate)")
+        
+        # Priority 4: If Step 2 failures are high, adjust daily loss thresholds
+        if patterns['step2_failures'] > 2: 
+            new_warning = max(2. 0, self.config.daily_loss_warning_pct - 0.5)
+            if new_warning != self.config.daily_loss_warning_pct:
+                config_changes["daily_loss_warning_pct"] = new_warning
+                print(f"    -> Lowering daily_loss_warning to {new_warning}%")
+        
+        # If no changes determined but still failing, try incremental adjustments
+        if not config_changes and not strategy_changes:
+            # Alternate between different adjustment strategies based on iteration
+            if iteration % 3 == 1:
+                new_confluence = max(3, self.config.min_confluence_score - 1)
+                config_changes["min_confluence_score"] = new_confluence
+                strategy_changes["min_confluence"] = new_confluence
+                print(f"    -> Iteration-based:  lowering confluence to {new_confluence}")
+            elif iteration % 3 == 2:
+                new_risk = max(0.3, self.config.risk_per_trade_pct - 0.05)
+                config_changes["risk_per_trade_pct"] = new_risk
+                print(f"    -> Iteration-based: adjusting risk to {new_risk}%")
+            else:
+                new_quality = max(1, self.config.min_quality_factors - 1)
+                config_changes["min_quality_factors"] = new_quality
+                print(f"    -> Iteration-based: lowering quality factors to {new_quality}")
+        
+        return config_changes, strategy_changes
+    
+    def apply_optimizations(self, patterns: Dict, iteration: int) -> bool:
+        """
+        Apply optimizations to both in-memory config AND source files.
+        
+        Returns True if optimizations were applied successfully.
+        """
+        config_changes, strategy_changes = self.determine_optimizations(patterns, iteration)
+        
+        if not config_changes and not strategy_changes:
+            print(f"  No optimizations determined for iteration {iteration}")
+            return False
+        
+        # Apply to in-memory config
+        for param, value in config_changes. items():
+            if hasattr(self.config, param):
+                setattr(self.config, param, value)
+                print(f"    In-memory:  {param} = {value}")
+        
+        # Apply to source files
+        success = self.file_modifier.apply_all_modifications(
+            config_changes, 
+            strategy_changes, 
+            iteration
+        )
+        
+        # Log the optimization
+        self.optimization_log.append({
+            "iteration": iteration,
+            "patterns": patterns,
+            "config_changes": config_changes,
+            "strategy_changes": strategy_changes,
+            "timestamp": datetime.now().isoformat(),
+        })
+        
+        return success
+    
+    def get_config(self) -> FTMO10KConfig:
+        """Return the current (potentially modified) config."""
+        return self.config
+    
+    def reset_config(self):
+        """Reset config to original values."""
+        for param, value in self._original_config. items():
+            if hasattr(self.config, param):
+                setattr(self. config, param, value)
+    
+    def save_optimization_log(self, filepath: Path = OUTPUT_DIR / "optimization_log.json"):
+        """Save optimization log to JSON file."""
+        with open(filepath, 'w') as f:
+            json. dump(self.optimization_log, f

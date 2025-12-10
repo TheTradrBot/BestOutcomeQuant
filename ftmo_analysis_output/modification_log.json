@@ -1,0 +1,20 @@
+[
+  {
+    "iteration": 999,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter999_20251210_205450.py",
+    "changes": [
+      "min_confluence_score -> 4"
+    ],
+    "timestamp": "2025-12-10T20:54:50.661544"
+  },
+  {
+    "iteration": 999,
+    "file": "main_live_bot.py",
+    "backup": "ftmo_optimization_backups/main_live_bot_iter999_20251210_205450.py",
+    "changes": [
+      "MIN_CONFLUENCE -> 4 (converted from FTMO_CONFIG reference)"
+    ],
+    "timestamp": "2025-12-10T20:54:50.667816"
+  }
+]
