@@ -994,7 +994,7 @@ class PerformanceOptimizer:
     
     MIN_CHALLENGES_PASSED = 14
     MAX_CHALLENGES_FAILED = 2
-    MIN_TRADES_NEEDED = 1000
+    MIN_TRADES_NEEDED = 200
     
     def __init__(self, config: Optional[FTMO10KConfig] = None):
         self.optimization_log: List[Dict] = []

@@ -1,0 +1,199 @@
+{
+  "total_challenges_attempted": 6,
+  "challenges_passed": 5,
+  "challenges_failed": 1,
+  "all_results": [
+    {
+      "challenge_num": 1,
+      "status": "PASSED",
+      "failed_at": null,
+      "step1": {
+        "step_num": 1,
+        "passed": true,
+        "starting_balance": 10000.0,
+        "ending_balance": 11040.0,
+        "profit_pct": 10.4,
+        "max_daily_loss_pct": 1.24,
+        "max_drawdown_pct": 2.2800000000000002,
+        "trading_days": 15,
+        "trades_count": 63,
+        "failure_reason": ""
+      },
+      "step2": {
+        "step_num": 2,
+        "passed": true,
+        "starting_balance": 11040.0,
+        "ending_balance": 11600.832000000002,
+        "profit_pct": 5.08000000000002,
+        "max_daily_loss_pct": 2.7999999999999905,
+        "max_drawdown_pct": 6.399999999999979,
+        "trading_days": 20,
+        "trades_count": 80,
+        "failure_reason": ""
+      },
+      "total_profit_usd": 1600.8320000000022,
+      "start_date": "2025-03-12T21:00:00",
+      "end_date": "2025-05-25T21:00:00"
+    },
+    {
+      "challenge_num": 2,
+      "status": "PASSED",
+      "failed_at": null,
+      "step1": {
+        "step_num": 1,
+        "passed": true,
+        "starting_balance": 10000.0,
+        "ending_balance": 11024.0,
+        "profit_pct": 10.24,
+        "max_daily_loss_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "trading_days": 13,
+        "trades_count": 22,
+        "failure_reason": ""
+      },
+      "step2": {
+        "step_num": 2,
+        "passed": true,
+        "starting_balance": 11024.0,
+        "ending_balance": 11606.067200000005,
+        "profit_pct": 5.280000000000045,
+        "max_daily_loss_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "trading_days": 8,
+        "trades_count": 15,
+        "failure_reason": ""
+      },
+      "total_profit_usd": 1606.067200000005,
+      "start_date": "2025-04-30T21:00:00",
+      "end_date": "2025-06-05T21:00:00"
+    },
+    {
+      "challenge_num": 3,
+      "status": "PASSED",
+      "failed_at": null,
+      "step1": {
+        "step_num": 1,
+        "passed": true,
+        "starting_balance": 10000.0,
+        "ending_balance": 11068.0,
+        "profit_pct": 10.68,
+        "max_daily_loss_pct": 0.0,
+        "max_drawdown_pct": 0.4,
+        "trading_days": 10,
+        "trades_count": 26,
+        "failure_reason": ""
+      },
+      "step2": {
+        "step_num": 2,
+        "passed": true,
+        "starting_balance": 11068.0,
+        "ending_balance": 11661.2448,
+        "profit_pct": 5.360000000000004,
+        "max_daily_loss_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "trading_days": 4,
+        "trades_count": 9,
+        "failure_reason": ""
+      },
+      "total_profit_usd": 1661.2448000000004,
+      "start_date": "2025-06-08T21:00:00",
+      "end_date": "2025-07-02T21:00:00"
+    },
+    {
+      "challenge_num": 4,
+      "status": "PASSED",
+      "failed_at": null,
+      "step1": {
+        "step_num": 1,
+        "passed": true,
+        "starting_balance": 10000.0,
+        "ending_balance": 11044.0,
+        "profit_pct": 10.440000000000001,
+        "max_daily_loss_pct": 0.4,
+        "max_drawdown_pct": 0.4,
+        "trading_days": 16,
+        "trades_count": 28,
+        "failure_reason": ""
+      },
+      "step2": {
+        "step_num": 2,
+        "passed": true,
+        "starting_balance": 11044.0,
+        "ending_balance": 11600.617600000001,
+        "profit_pct": 5.0400000000000125,
+        "max_daily_loss_pct": 0.39999999999999525,
+        "max_drawdown_pct": 0.39999999999999525,
+        "trading_days": 10,
+        "trades_count": 16,
+        "failure_reason": ""
+      },
+      "total_profit_usd": 1600.6176000000014,
+      "start_date": "2025-07-01T21:00:00",
+      "end_date": "2025-08-11T21:00:00"
+    },
+    {
+      "challenge_num": 5,
+      "status": "PASSED",
+      "failed_at": null,
+      "step1": {
+        "step_num": 1,
+        "passed": true,
+        "starting_balance": 10000.0,
+        "ending_balance": 11012.0,
+        "profit_pct": 10.12,
+        "max_daily_loss_pct": 0.8,
+        "max_drawdown_pct": 0.8,
+        "trading_days": 16,
+        "trades_count": 32,
+        "failure_reason": ""
+      },
+      "step2": {
+        "step_num": 2,
+        "passed": true,
+        "starting_balance": 11012.0,
+        "ending_balance": 11575.814400000005,
+        "profit_pct": 5.120000000000044,
+        "max_daily_loss_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "trading_days": 5,
+        "trades_count": 11,
+        "failure_reason": ""
+      },
+      "total_profit_usd": 1575.8144000000048,
+      "start_date": "2025-08-11T21:00:00",
+      "end_date": "2025-09-14T21:00:00"
+    },
+    {
+      "challenge_num": 6,
+      "status": "FAILED",
+      "failed_at": "Step 2",
+      "step1": {
+        "step_num": 1,
+        "passed": true,
+        "starting_balance": 10000.0,
+        "ending_balance": 11036.0,
+        "profit_pct": 10.36,
+        "max_daily_loss_pct": 0.8,
+        "max_drawdown_pct": 0.8,
+        "trading_days": 15,
+        "trades_count": 38,
+        "failure_reason": ""
+      },
+      "step2": {
+        "step_num": 2,
+        "passed": false,
+        "starting_balance": 11036.0,
+        "ending_balance": 10254.65119999999,
+        "profit_pct": -7.080000000000098,
+        "max_daily_loss_pct": 1.6000000000000083,
+        "max_drawdown_pct": 8.480000000000054,
+        "trading_days": 24,
+        "trades_count": 51,
+        "failure_reason": "Profit target not reached: -7.08% < 5.0%"
+      },
+      "total_profit_usd": 254.65119999998933,
+      "start_date": "2025-09-11T21:00:00",
+      "end_date": "2025-11-24T22:00:00"
+    }
+  ]
+}

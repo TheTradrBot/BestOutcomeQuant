@@ -30,14 +30,14 @@ class FTMO10KConfig:
     total_dd_emergency_pct: float = 7.0  # Emergency mode at 7% total DD
 
     # === POSITION SIZING (Ultra-Conservative) ===
-    risk_per_trade_pct: float = 0.4  # Ultra-conservative: 0.5% per trade
+    risk_per_trade_pct: float = 0.5  # Ultra-conservative: 0.5% per trade
     max_risk_aggressive_pct: float = 0.75  # Aggressive mode: 0.75%
     max_risk_normal_pct: float = 0.5  # Normal mode: 0.5%
     max_risk_conservative_pct: float = 0.25  # Conservative mode: 0.25%
     max_cumulative_risk_pct: float = 3.5  # Max total risk across all positions
 
     # === TRADE LIMITS ===
-    max_concurrent_trades: int = 2  # Max 3 concurrent positions
+    max_concurrent_trades: int = 3  # Max 3 concurrent positions
     max_trades_per_day: int = 5  # Max 5 trades per day
     max_trades_per_week: int = 20  # Max 20 trades per week
     max_pending_orders: int = 5  # Max 5 pending orders
