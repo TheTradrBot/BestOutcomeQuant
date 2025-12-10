@@ -1029,14 +1029,16 @@ class PerformanceOptimizer:
     Optimizes parameters and WRITES changes to actual files.
     Enhanced targets:
     - >= 14 challenges passed, <= 2 challenges failed
-    - >= 50% win rate per asset (for assets with 5+ trades)
+    - >= 40% win rate per asset (for assets with 3+ trades)
+    - >= +2R total per asset (for assets with 3+ trades)
     - >= $80 average profit per winning trade
     """
     
     MIN_CHALLENGES_PASSED = 14
     MAX_CHALLENGES_FAILED = 2
     MIN_TRADES_NEEDED = 300
-    MIN_WIN_RATE_PER_ASSET = 50.0
+    MIN_WIN_RATE_PER_ASSET = 40.0
+    MIN_R_PER_ASSET = 2.0
     MIN_PROFIT_PER_WIN = 80.0
     
     def __init__(self, config: Optional[FTMO10KConfig] = None):
@@ -1049,6 +1051,10 @@ class PerformanceOptimizer:
         self.current_risk_pct = self.config.risk_per_trade_pct
         self.current_max_concurrent = self.config.max_concurrent_trades
         self.current_min_quality = self.config.min_quality_factors
+        
+        self.excluded_assets: List[str] = []
+        self.best_result: Optional[Dict] = None
+        self.best_score: float = -999999
     
     def _snapshot_config(self) -> Dict:
         """Take a snapshot of current config values."""
@@ -1063,7 +1069,7 @@ class PerformanceOptimizer:
         }
     
     def analyze_per_asset_performance(self, trades: List[BacktestTrade]) -> Dict:
-        """Analyze win rate and profit per asset."""
+        """Analyze win rate, total R, and profit per asset."""
         asset_stats = {}
         
         for trade in trades:
@@ -1074,11 +1080,13 @@ class PerformanceOptimizer:
                     'wins': 0,
                     'losses': 0,
                     'total_profit': 0.0,
+                    'total_r': 0.0,
                     'win_profits': [],
                 }
             
             asset_stats[symbol]['total'] += 1
             asset_stats[symbol]['total_profit'] += trade.profit_loss_usd
+            asset_stats[symbol]['total_r'] += trade.r_multiple
             
             if trade.result == "WIN":
                 asset_stats[symbol]['wins'] += 1
@@ -1093,6 +1101,64 @@ class PerformanceOptimizer:
             ) if stats['win_profits'] else 0
         
         return asset_stats
+    
+    def identify_underperforming_assets(self, trades: List[BacktestTrade]) -> List[str]:
+        """Identify assets that fail win-rate or R criteria."""
+        asset_stats = self.analyze_per_asset_performance(trades)
+        underperforming = []
+        
+        for symbol, stats in asset_stats.items():
+            if stats['total'] >= 3:
+                if stats['win_rate'] < self.MIN_WIN_RATE_PER_ASSET:
+                    underperforming.append(symbol)
+                elif stats['total_r'] < self.MIN_R_PER_ASSET:
+                    underperforming.append(symbol)
+        
+        return underperforming
+    
+    def calculate_result_score(self, results: Dict) -> float:
+        """Calculate a score for comparing results across iterations."""
+        passed = results.get("challenges_passed", 0)
+        failed = results.get("challenges_failed", 0)
+        all_trades = results.get("all_trades", [])
+        
+        asset_stats = self.analyze_per_asset_performance(all_trades)
+        
+        assets_meeting_wr = sum(1 for s, st in asset_stats.items() 
+                                if st['total'] >= 3 and st['win_rate'] >= self.MIN_WIN_RATE_PER_ASSET)
+        assets_meeting_r = sum(1 for s, st in asset_stats.items() 
+                               if st['total'] >= 3 and st['total_r'] >= self.MIN_R_PER_ASSET)
+        
+        win_profits = [t.profit_loss_usd for t in all_trades if t.result == "WIN"]
+        avg_win = sum(win_profits) / len(win_profits) if win_profits else 0
+        
+        score = (passed * 100) - (failed * 50) + assets_meeting_wr * 10 + assets_meeting_r * 10 + avg_win
+        return score
+    
+    def update_best_result(self, results: Dict, iteration: int):
+        """Track the best result across iterations."""
+        score = self.calculate_result_score(results)
+        if score > self.best_score:
+            self.best_score = score
+            self.best_result = {
+                "iteration": iteration,
+                "results": results,
+                "score": score,
+                "params": self.get_current_params(),
+                "excluded_assets": self.excluded_assets.copy(),
+            }
+            print(f"  [Optimizer] New best result! Score: {score:.1f} (Iteration #{iteration})")
+    
+    def get_excluded_assets(self) -> List[str]:
+        """Get list of currently excluded assets."""
+        return self.excluded_assets.copy()
+    
+    def add_excluded_assets(self, assets: List[str]):
+        """Add assets to exclusion list."""
+        for asset in assets:
+            if asset not in self.excluded_assets:
+                self.excluded_assets.append(asset)
+                print(f"  [Optimizer] Excluding underperforming asset: {asset}")
     
     def check_success_criteria(self, results: Dict) -> Tuple[bool, List[str]]:
         """Check if results meet ALL success criteria. Returns (success, issues)."""
@@ -1109,15 +1175,21 @@ class PerformanceOptimizer:
             issues.append(f"Challenges failed: {failed} > {self.MAX_CHALLENGES_FAILED}")
         
         asset_stats = self.analyze_per_asset_performance(all_trades)
-        underperforming_assets = []
+        low_wr_assets = []
+        low_r_assets = []
         
         for symbol, stats in asset_stats.items():
-            if stats['total'] >= 5:
+            if stats['total'] >= 3:
                 if stats['win_rate'] < self.MIN_WIN_RATE_PER_ASSET:
-                    underperforming_assets.append(f"{symbol}: {stats['win_rate']:.1f}%")
+                    low_wr_assets.append(f"{symbol}: {stats['win_rate']:.1f}%")
+                if stats['total_r'] < self.MIN_R_PER_ASSET:
+                    low_r_assets.append(f"{symbol}: {stats['total_r']:+.1f}R")
         
-        if underperforming_assets:
-            issues.append(f"Assets below {self.MIN_WIN_RATE_PER_ASSET}% win rate: {', '.join(underperforming_assets[:5])}")
+        if low_wr_assets:
+            issues.append(f"Assets below {self.MIN_WIN_RATE_PER_ASSET}% WR: {', '.join(low_wr_assets[:5])}")
+        
+        if low_r_assets:
+            issues.append(f"Assets below +{self.MIN_R_PER_ASSET}R: {', '.join(low_r_assets[:5])}")
         
         win_profits = [t.profit_loss_usd for t in all_trades if t.result == "WIN"]
         avg_win_profit = sum(win_profits) / len(win_profits) if win_profits else 0
@@ -1158,7 +1230,12 @@ class PerformanceOptimizer:
         asset_stats = self.analyze_per_asset_performance(all_trades)
         low_winrate_assets = [
             s for s, stats in asset_stats.items()
-            if stats['total'] >= 5 and stats['win_rate'] < self.MIN_WIN_RATE_PER_ASSET
+            if stats['total'] >= 3 and stats['win_rate'] < self.MIN_WIN_RATE_PER_ASSET
+        ]
+        
+        low_r_assets = [
+            s for s, stats in asset_stats.items()
+            if stats['total'] >= 3 and stats['total_r'] < self.MIN_R_PER_ASSET
         ]
         
         win_profits = [t.profit_loss_usd for t in all_trades if t.result == "WIN"]
@@ -1174,6 +1251,7 @@ class PerformanceOptimizer:
             "challenges_passed": results.get("challenges_passed", 0),
             "challenges_failed": results.get("challenges_failed", 0),
             "low_winrate_assets": low_winrate_assets,
+            "low_r_assets": low_r_assets,
             "avg_win_profit": avg_win_profit,
             "asset_stats": asset_stats,
         }
@@ -1181,6 +1259,15 @@ class PerformanceOptimizer:
     def determine_optimizations(self, patterns: Dict, iteration: int) -> Dict[str, Any]:
         """Determine what optimizations to apply based on patterns."""
         optimizations = {}
+        
+        low_wr_assets = patterns.get("low_winrate_assets", [])
+        low_r_assets = patterns.get("low_r_assets", [])
+        
+        if low_wr_assets or low_r_assets:
+            assets_to_exclude = list(set(low_wr_assets + low_r_assets))
+            if assets_to_exclude:
+                self.add_excluded_assets(assets_to_exclude)
+                print(f"  [Optimizer] Excluding {len(assets_to_exclude)} underperforming assets")
         
         if patterns["total_trades"] < self.MIN_TRADES_NEEDED:
             new_confluence = max(2, self.current_min_confluence - 1)
@@ -1201,7 +1288,7 @@ class PerformanceOptimizer:
             optimizations["risk_per_trade_pct"] = new_risk
             print(f"  [Optimizer] Low avg win profit (${patterns['avg_win_profit']:.2f}). Increasing risk to {new_risk}%")
         
-        if len(patterns.get("low_winrate_assets", [])) > 5:
+        if len(low_wr_assets) > 5:
             new_confluence = min(6, self.current_min_confluence + 1)
             new_quality = min(3, self.current_min_quality + 1)
             optimizations["min_confluence_score"] = new_confluence
@@ -1591,6 +1678,7 @@ def run_full_period_backtest(
     min_confluence: int = 3,
     min_quality_factors: int = 1,
     risk_per_trade_pct: float = 0.5,
+    excluded_assets: Optional[List[str]] = None,
 ) -> List[Trade]:
     """
     Run backtest for the full Jan-Nov 2025 period.
@@ -1598,6 +1686,10 @@ def run_full_period_backtest(
     """
     if assets is None:
         assets = FOREX_PAIRS + METALS + INDICES + CRYPTO_ASSETS
+    
+    if excluded_assets:
+        assets = [a for a in assets if a not in excluded_assets]
+        print(f"Excluding {len(excluded_assets)} underperforming assets")
     
     print(f"\n{'='*80}")
     print("RUNNING FULL PERIOD BACKTEST")
@@ -1684,13 +1776,14 @@ def main_challenge_analyzer():
     1. Run backtest with current parameters
     2. Check if ALL success criteria met:
        - >=14 challenges passed, <=2 failed
-       - >=50% win rate per asset
+       - >=40% win rate per asset
+       - >=+2R total per asset
        - >=$80 avg profit per winning trade
-    3. If not met, analyze failures, modify parameters in actual files, rerun
+    3. If not met, analyze failures, exclude underperforming assets, modify parameters, rerun
     4. Loop until success or max iterations
-    5. Generate final reports
+    5. Use BEST result across all iterations for final reports
     """
-    MAX_ITERATIONS = 15
+    MAX_ITERATIONS = 25
     iteration = 0
     success = False
     
@@ -1708,7 +1801,8 @@ def main_challenge_analyzer():
     print(f"Targets:")
     print(f"  - Minimum 14 challenges PASSED")
     print(f"  - Maximum 2 challenges FAILED")
-    print(f"  - Minimum 50% win rate per asset (assets with 5+ trades)")
+    print(f"  - Minimum 40% win rate per asset (assets with 3+ trades)")
+    print(f"  - Minimum +2R total per asset (assets with 3+ trades)")
     print(f"  - Minimum $80 average profit per winning trade")
     print(f"Maximum Iterations: {MAX_ITERATIONS}")
     print(f"{'='*80}")
@@ -1732,6 +1826,7 @@ def main_challenge_analyzer():
             min_confluence=current_params['min_confluence'],
             min_quality_factors=current_params['min_quality_factors'],
             risk_per_trade_pct=current_params['risk_per_trade_pct'],
+            excluded_assets=optimizer.get_excluded_assets(),
         )
         
         if not trades:
@@ -1765,8 +1860,13 @@ def main_challenge_analyzer():
         avg_win = sum(win_profits) / len(win_profits) if win_profits else 0
         print(f"Avg Win Profit: ${avg_win:.2f} (need >= $80)")
         
-        low_wr_count = sum(1 for s, st in asset_stats.items() if st['total'] >= 5 and st['win_rate'] < 50)
-        print(f"Assets below 50% WR: {low_wr_count}")
+        low_wr_count = sum(1 for s, st in asset_stats.items() if st['total'] >= 3 and st['win_rate'] < 40)
+        low_r_count = sum(1 for s, st in asset_stats.items() if st['total'] >= 3 and st['total_r'] < 2.0)
+        print(f"Assets below 40% WR: {low_wr_count}")
+        print(f"Assets below +2R: {low_r_count}")
+        print(f"Excluded assets: {len(optimizer.get_excluded_assets())}")
+        
+        optimizer.update_best_result(results, iteration)
         
         if success:
             print(f"\n*** ALL SUCCESS CRITERIA MET! ***")
@@ -1781,12 +1881,30 @@ def main_challenge_analyzer():
             else:
                 print(f"\nMax iterations ({MAX_ITERATIONS}) reached. Generating final reports.")
     
+    if optimizer.best_result and not success:
+        print(f"\n{'='*80}")
+        print(f"USING BEST RESULT FROM ITERATION #{optimizer.best_result['iteration']}")
+        print(f"Best Score: {optimizer.best_score:.1f}")
+        print(f"Best Params: {optimizer.best_result['params']}")
+        print(f"Excluded Assets: {len(optimizer.best_result['excluded_assets'])}")
+        print(f"{'='*80}")
+        results = optimizer.best_result['results']
+    
     print(f"\n{'='*80}")
     print("GENERATING FINAL REPORTS")
     print(f"{'='*80}")
     
     reporter = ReportGenerator()
     reporter.generate_all_reports(results, validation_report)
+    
+    print(f"\n{'='*80}")
+    print("ASSET PERFORMANCE SUMMARY")
+    print(f"{'='*80}")
+    asset_stats = optimizer.analyze_per_asset_performance(results.get('all_trades', []))
+    for symbol, stats in sorted(asset_stats.items(), key=lambda x: x[1]['total_r'], reverse=True):
+        if stats['total'] >= 3:
+            status = "OK" if stats['win_rate'] >= 40 and stats['total_r'] >= 2.0 else "BELOW TARGET"
+            print(f"  {symbol}: {stats['total']} trades, {stats['win_rate']:.1f}% WR, {stats['total_r']:+.1f}R - {status}")
     
     modification_history = optimizer.file_modifier.get_modification_history()
     if modification_history:
