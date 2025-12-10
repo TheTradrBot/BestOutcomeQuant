@@ -22,7 +22,7 @@ from strategy_core import (
 )
 from symbol_mapping import ALL_TRADABLE_FTMO
 from data import get_ohlcv
-from ftmo_config import FTMO_CONFIG, get_pip_size
+from ftmo_config import FTMO_CONFIG, get_pip_size, get_sl_limits
 from config import SIGNAL_MODE, MIN_CONFLUENCE_STANDARD, MIN_CONFLUENCE_AGGRESSIVE
 
 MIN_CONFLUENCE = MIN_CONFLUENCE_STANDARD if SIGNAL_MODE == "standard" else MIN_CONFLUENCE_AGGRESSIVE
@@ -118,20 +118,21 @@ def diagnose_symbol(symbol: str) -> Dict:
     if entry_distance_r > FTMO_CONFIG.max_entry_distance_r:
         reasons.append(f"Entry too far ({entry_distance_r:.2f}R > {FTMO_CONFIG.max_entry_distance_r}R)")
     
-    # Check SL size
+    # Check SL size with asset-specific limits
     pip_size = get_pip_size(symbol)
     sl_pips = abs(entry - sl) / pip_size
+    min_sl, max_sl = get_sl_limits(symbol)
     
     print(f"\nSL Analysis:")
     print(f"  SL: {sl:.5f}")
     print(f"  SL Pips: {sl_pips:.1f}")
-    print(f"  Min: {FTMO_CONFIG.min_sl_pips}, Max: {FTMO_CONFIG.max_sl_pips}")
+    print(f"  Min: {min_sl}, Max: {max_sl} (asset-specific)")
     
-    if sl_pips < FTMO_CONFIG.min_sl_pips:
-        reasons.append(f"SL too tight ({sl_pips:.1f} < {FTMO_CONFIG.min_sl_pips} pips)")
+    if sl_pips < min_sl:
+        reasons.append(f"SL too tight ({sl_pips:.1f} < {min_sl} pips)")
     
-    if sl_pips > FTMO_CONFIG.max_sl_pips:
-        reasons.append(f"SL too wide ({sl_pips:.1f} > {FTMO_CONFIG.max_sl_pips} pips)")
+    if sl_pips > max_sl:
+        reasons.append(f"SL too wide ({sl_pips:.1f} > {max_sl} pips)")
     
     # Check if SL already hit
     if direction == "bullish" and current_price <= sl:
@@ -172,7 +173,7 @@ def main():
     print(f"Min Confluence: {MIN_CONFLUENCE}/7")
     print(f"Min Quality: {FTMO_CONFIG.min_quality_factors}")
     print(f"Max Entry Distance: {FTMO_CONFIG.max_entry_distance_r}R")
-    print(f"SL Range: {FTMO_CONFIG.min_sl_pips}-{FTMO_CONFIG.max_sl_pips} pips")
+    print(f"SL Limits: Asset-specific (use get_sl_limits())")
     print(f"{'='*70}")
     
     tradeable_setups = []

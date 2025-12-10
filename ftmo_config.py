@@ -43,15 +43,17 @@ class FTMO10KConfig:
     max_trades_per_week: int = 5         # Max 5 trades per week
     max_trades_per_symbol: int = 1
 
-    # === ENTRY OPTIMIZATION (STRICTER) ===
-    max_entry_distance_r: float = 0.8    # Entry must be close to ideal
-    immediate_entry_r: float = 0.3
+    # === ENTRY OPTIMIZATION ===
+    max_entry_distance_r: float = 1.2    # Allow entries up to 1.2R from ideal
+    immediate_entry_r: float = 0.4       # Market order if within 0.4R
 
-    # SL validation (in pips) - TIGHTER
-    min_sl_pips: float = 15.0
-    max_sl_pips: float = 80.0            # Tighter stops
+    # SL validation - ATR-based is primary, pips are fallback per asset type
     min_sl_atr_ratio: float = 0.5
-    max_sl_atr_ratio: float = 2.0        # No oversized stops
+    max_sl_atr_ratio: float = 2.5        # Allow reasonable ATR-based stops
+
+    # === CONFLUENCE SETTINGS (BALANCED) ===
+    min_confluence_score: int = 4        # 4/7 minimum for more opportunities
+    min_quality_factors: int = 2         # 2 quality factors (balanced)
 
     # === TAKE PROFIT SETTINGS ===
     tp1_r_multiple: float = 1.5          # Longer TP1 for better R:R
@@ -72,12 +74,9 @@ class FTMO10KConfig:
     ultra_safe_risk_pct: float = 0.2
     ultra_safe_max_trades: int = 1
 
-    # === CONFLUENCE SETTINGS (STRICTER - QUALITY ONLY) ===
-    min_confluence_score: int = 5        # 5/7 minimum (was 4/7)
-    min_quality_factors: int = 3         # Need 3 quality factors (was 1)
     require_rr_flag: bool = True
-    require_confirmation: bool = True    # MUST have 4H confirmation
-    require_htf_alignment: bool = True   # MUST have HTF alignment
+    require_confirmation: bool = False   # 4H confirmation optional
+    require_htf_alignment: bool = False  # HTF alignment optional
 
     # === ASSET WHITELIST (TOP PERFORMERS ONLY) ===
     # Based on backtest: SPX500, NAS100, AUD_NZD, GBP_JPY, USD_JPY, XAU_USD
@@ -155,3 +154,26 @@ def get_pip_size(symbol: str) -> float:
         return PIP_SIZES["crypto"]
     else:
         return PIP_SIZES["forex_standard"]
+
+
+def get_sl_limits(symbol: str) -> tuple:
+    """
+    Get min/max SL in pips for a specific symbol.
+    
+    Different asset classes have different pip sizes and typical ranges.
+    Values based on realistic ATR-based stops for swing trading.
+    """
+    s = symbol.upper()
+    
+    if any(idx in s for idx in ["US30", "US500", "NAS100", "SPX500", "DAX", "USTEC", "DJ30"]):
+        return (50.0, 1500.0)  # Indices: 50-1500 points (typical intraday/swing range)
+    elif "JPY" in s:
+        return (30.0, 400.0)   # JPY pairs: 30-400 pips (3-4 yen move typical)
+    elif "XAU" in s or "GOLD" in s:
+        return (50.0, 500.0)   # Gold: 50-500 pips ($50-$500 move)
+    elif "XAG" in s or "SILVER" in s:
+        return (30.0, 200.0)   # Silver: 30-200 pips
+    elif any(crypto in s for crypto in ["BTC", "ETH", "LTC"]):
+        return (100.0, 3000.0) # Crypto: 100-3000 points (high volatility)
+    else:
+        return (15.0, 150.0)   # Standard forex: 15-150 pips

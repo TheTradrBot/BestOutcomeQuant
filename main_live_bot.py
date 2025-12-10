@@ -329,7 +329,7 @@ class LiveTradingBot:
         
         Returns trade setup dict if signal is active AND tradeable, None otherwise.
         """
-        from ftmo_config import FTMO_CONFIG, get_pip_size
+        from ftmo_config import FTMO_CONFIG, get_pip_size, get_sl_limits
         
         if symbol not in self.symbol_map:
             log.debug(f"[{symbol}] Not available on this broker, skipping")
@@ -436,24 +436,25 @@ class LiveTradingBot:
         
         log.info(f"[{symbol}] Entry proximity OK: {entry_distance_r:.2f}R from current price")
         
-        # EXACT same SL validation and adjustment as backtest_live_bot.py
+        # SL validation with asset-specific limits
         pip_size = get_pip_size(symbol)
         sl_pips = abs(entry - sl) / pip_size
+        min_sl_pips, max_sl_pips = get_sl_limits(symbol)
         
-        # Min SL check - adjust if needed (same as backtest)
-        if sl_pips < FTMO_CONFIG.min_sl_pips:
-            log.info(f"[{symbol}] SL too tight: {sl_pips:.1f} pips (min: {FTMO_CONFIG.min_sl_pips})")
+        # Min SL check - adjust if needed
+        if sl_pips < min_sl_pips:
+            log.info(f"[{symbol}] SL too tight: {sl_pips:.1f} pips (min: {min_sl_pips})")
             if direction == "bullish":
-                sl = entry - (FTMO_CONFIG.min_sl_pips * pip_size)
+                sl = entry - (min_sl_pips * pip_size)
             else:
-                sl = entry + (FTMO_CONFIG.min_sl_pips * pip_size)
+                sl = entry + (min_sl_pips * pip_size)
             risk = abs(entry - sl)
-            sl_pips = FTMO_CONFIG.min_sl_pips
+            sl_pips = min_sl_pips
             log.info(f"[{symbol}] SL adjusted to minimum: {sl:.5f} ({sl_pips:.1f} pips)")
         
-        # Max SL check - reject if too wide (same as backtest)
-        if sl_pips > FTMO_CONFIG.max_sl_pips:
-            log.info(f"[{symbol}] SL too wide: {sl_pips:.1f} pips (max: {FTMO_CONFIG.max_sl_pips}) - skipping")
+        # Max SL check - reject if too wide
+        if sl_pips > max_sl_pips:
+            log.info(f"[{symbol}] SL too wide: {sl_pips:.1f} pips (max: {max_sl_pips}) - skipping")
             return None
         
         # ATR-based SL validation (same as backtest)
@@ -545,7 +546,7 @@ class LiveTradingBot:
         - Validates all risk limits before placing
         - Calculates proper lot size for 10K account
         """
-        from ftmo_config import FTMO_CONFIG, get_pip_size
+        from ftmo_config import FTMO_CONFIG, get_pip_size, get_sl_limits
         
         symbol = setup["symbol"]
         broker_symbol = setup.get("broker_symbol", self.symbol_map.get(symbol, symbol))
