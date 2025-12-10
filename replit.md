@@ -217,6 +217,18 @@ Start-ScheduledTask -TaskName TradrLive
 ## Recent Changes
 
 ### December 2025
+- **UPDATED**: Enhanced `ftmo_challenge_analyzer.py` with advanced success criteria
+  - Added per-asset win rate tracking (minimum 50% per asset with 5+ trades)
+  - Added minimum $80 average profit per winning trade validation
+  - Enhanced PerformanceOptimizer with `analyze_per_asset_performance()` method
+  - Updated success criteria to return detailed issue list
+  - Smart optimization: increases risk if avg win profit low, increases quality filters if many low win-rate assets
+  - Added `reset_config()` method for resetting to original values
+- **UPDATED**: `ftmo_config.py` now uses 1% risk (matching /backtest command)
+  - risk_per_trade_pct: 1.0% (was 0.3%)
+  - max_concurrent_trades: 5 (was 2)
+  - min_confluence_score: 4/7 (was 3/7)
+  - min_quality_factors: 2 (was 1)
 - **NEW**: Created `ftmo_challenge_analyzer.py` - Ultimate FTMO Challenge Performance Analyzer
   - Backtests Jan 2025 - Nov 2025 across all 34 tradable symbols
   - Sequential FTMO challenge simulation (Step 1: 10%, Step 2: 5%)
