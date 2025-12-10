@@ -21,15 +21,15 @@ class StrategyParams:
     
     These control confluence thresholds, SL/TP ratios, filters, etc.
     """
-    min_confluence: int = 3
+    min_confluence: int = 4
     min_quality_factors: int = 1
     
     atr_sl_multiplier: float = 1.5
-    atr_tp1_multiplier: float = 0.6
-    atr_tp2_multiplier: float = 1.2
-    atr_tp3_multiplier: float = 2.0
-    atr_tp4_multiplier: float = 3.0
-    atr_tp5_multiplier: float = 4.0
+    atr_tp1_multiplier: float = 1.0
+    atr_tp2_multiplier: float = 2.0
+    atr_tp3_multiplier: float = 3.0
+    atr_tp4_multiplier: float = 4.0
+    atr_tp5_multiplier: float = 5.0
     
     fib_low: float = 0.382
     fib_high: float = 0.886

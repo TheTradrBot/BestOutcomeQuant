@@ -5,7 +5,7 @@ FTMO CHALLENGE PERFORMANCE - JAN 2025 TO NOV 2025
 
 PERIOD: January 1, 2025 - November 30, 2025 (11 months)
 ACCOUNT SIZE: $10,000 (per challenge)
-TOTAL TRADES EXECUTED: 391
+TOTAL TRADES EXECUTED: 422
 
 CHALLENGE RESULTS:
 ------------------
@@ -15,32 +15,32 @@ Success Rate: 83.3%
 
 CHALLENGE DETAILS:
 ------------------
-Challenge #1: PASSED | Step 1: +10.4% | Step 2: +5.1% | Total: $1,601
-Challenge #2: PASSED | Step 1: +10.2% | Step 2: +5.3% | Total: $1,606
-Challenge #3: PASSED | Step 1: +10.7% | Step 2: +5.4% | Total: $1,661
-Challenge #4: PASSED | Step 1: +10.4% | Step 2: +5.0% | Total: $1,601
-Challenge #5: PASSED | Step 1: +10.1% | Step 2: +5.1% | Total: $1,576
-Challenge #6: FAILED | Step 1: +10.4% | Failed at: Step 2
+Challenge #1: PASSED | Step 1: +10.3% | Step 2: +5.1% | Total: $1,588
+Challenge #2: PASSED | Step 1: +10.4% | Step 2: +5.0% | Total: $1,594
+Challenge #3: PASSED | Step 1: +10.1% | Step 2: +5.2% | Total: $1,583
+Challenge #4: PASSED | Step 1: +10.1% | Step 2: +5.1% | Total: $1,572
+Challenge #5: PASSED | Step 1: +10.3% | Step 2: +5.0% | Total: $1,582
+Challenge #6: FAILED | Step 1: -4.3% | Failed at: Step 1
 
 TRADING STATISTICS:
 -------------------
-Total Trades: 391
-Winning Trades: 248
-Losing Trades: 101
-Win Rate: 63.4%
-Average R per Trade: +0.52R
-Best Trade: +1.8R (GBP_USD)
+Total Trades: 422
+Winning Trades: 258
+Losing Trades: 117
+Win Rate: 61.1%
+Average R per Trade: +0.57R
+Best Trade: +3.5R (GBP_USD)
 Worst Trade: -1.0R
 
 PROFITABILITY ANALYSIS:
 -----------------------
-Gross Profit: $+12,625.77
-Gross Loss: $-4,326.54
-Net Profit: $+8,299.23
+Gross Profit: $+11,132.67
+Gross Loss: $-3,645.29
+Net Profit: $+7,487.38
 
 EARNING POTENTIAL:
 ------------------
-TOTAL FROM 5 PASSED CHALLENGES: $8,044.58
+TOTAL FROM 5 PASSED CHALLENGES: $7,919.38
 
 SUCCESS CRITERIA CHECK:
 -----------------------

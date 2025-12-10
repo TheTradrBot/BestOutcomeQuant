@@ -30,7 +30,7 @@ class FTMO10KConfig:
     total_dd_emergency_pct: float = 7.0  # Emergency mode at 7% total DD
 
     # === POSITION SIZING (Ultra-Conservative) ===
-    risk_per_trade_pct: float = 0.30000000000000004  # Ultra-conservative: 0.5% per trade
+    risk_per_trade_pct: float = 0.4  # Ultra-conservative: 0.5% per trade
     max_risk_aggressive_pct: float = 0.75  # Aggressive mode: 0.75%
     max_risk_normal_pct: float = 0.5  # Normal mode: 0.5%
     max_risk_conservative_pct: float = 0.25  # Conservative mode: 0.25%
@@ -55,7 +55,7 @@ class FTMO10KConfig:
     max_sl_atr_ratio: float = 3.0  # Maximum SL = 3.0 * ATR
 
     # === CONFLUENCE SETTINGS ===
-    min_confluence_score: int = 3  # Minimum 5/7 confluence (ultra-strict)
+    min_confluence_score: int = 4  # Minimum 5/7 confluence (ultra-strict)
     min_quality_factors: int = 1  # Minimum 2 quality factors
 
     # === TAKE PROFIT SETTINGS ===

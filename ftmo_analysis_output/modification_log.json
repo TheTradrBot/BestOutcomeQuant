@@ -36,5 +36,41 @@
       "max_concurrent_trades -> 2"
     ],
     "timestamp": "2025-12-10T21:29:11.597956"
+  },
+  {
+    "iteration": 1,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter1_20251210_214118.py",
+    "changes": [
+      "min_confluence_score -> 3"
+    ],
+    "timestamp": "2025-12-10T21:41:18.593740"
+  },
+  {
+    "iteration": 1,
+    "file": "strategy_core.py",
+    "backup": "ftmo_optimization_backups/strategy_core_iter1_20251210_214118.py",
+    "changes": [
+      "min_confluence -> 3"
+    ],
+    "timestamp": "2025-12-10T21:41:18.599114"
+  },
+  {
+    "iteration": 1,
+    "file": "main_live_bot.py",
+    "backup": "ftmo_optimization_backups/main_live_bot_iter1_20251210_214118.py",
+    "changes": [
+      "MIN_CONFLUENCE -> 3"
+    ],
+    "timestamp": "2025-12-10T21:41:18.603334"
+  },
+  {
+    "iteration": 2,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter2_20251210_214123.py",
+    "changes": [
+      "risk_per_trade_pct -> 0.30000000000000004"
+    ],
+    "timestamp": "2025-12-10T21:41:23.863101"
   }
 ]
