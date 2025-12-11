@@ -64,7 +64,9 @@ class PendingSetup:
     tp4: Optional[float] = None
     tp5: Optional[float] = None
     confluence: int = 0
+    confluence_score: int = 0
     quality_factors: int = 0
+    entry_distance_r: float = 0.0
     created_at: str = ""
     order_ticket: Optional[int] = None
     status: str = "pending"
@@ -575,6 +577,64 @@ class LiveTradingBot:
                 })
         return self.risk_manager.calculate_pending_orders_risk(pending_list)
     
+    def _try_replace_worst_pending(
+        self,
+        new_symbol: str,
+        new_confluence: int,
+        new_entry_distance_r: float,
+    ) -> bool:
+        """
+        Try to replace the worst pending order with a better one.
+        
+        Compares new setup quality vs existing pending orders.
+        Replaces if new setup is significantly better (closer entry OR higher confluence).
+        
+        Returns True if replacement was made, False otherwise.
+        """
+        pending_orders = [
+            (sym, setup) for sym, setup in self.pending_setups.items()
+            if setup.status == "pending"
+        ]
+        
+        if not pending_orders:
+            return False
+        
+        worst_symbol = None
+        worst_score = float('inf')
+        worst_setup = None
+        
+        for sym, setup in pending_orders:
+            entry_dist_r = getattr(setup, 'entry_distance_r', 1.0)
+            confluence = getattr(setup, 'confluence_score', 4)
+            score = confluence - entry_dist_r
+            
+            if score < worst_score:
+                worst_score = score
+                worst_symbol = sym
+                worst_setup = setup
+        
+        if worst_symbol is None:
+            return False
+        
+        new_score = new_confluence - new_entry_distance_r
+        
+        if new_score > worst_score + 0.5:
+            log.info(f"[{new_symbol}] Better setup found (score: {new_score:.2f}) - replacing {worst_symbol} (score: {worst_score:.2f})")
+            
+            if worst_setup and worst_setup.order_ticket:
+                try:
+                    self.mt5.cancel_pending_order(worst_setup.order_ticket)
+                    log.info(f"[{worst_symbol}] Cancelled pending order (ticket: {worst_setup.order_ticket})")
+                except Exception as e:
+                    log.warning(f"[{worst_symbol}] Failed to cancel order: {e}")
+            
+            del self.pending_setups[worst_symbol]
+            self._save_pending_setups()
+            return True
+        
+        log.info(f"[{new_symbol}] New setup (score: {new_score:.2f}) not better than worst pending (score: {worst_score:.2f})")
+        return False
+    
     def place_setup_order(self, setup: Dict) -> bool:
         """
         Place order for a validated setup.
@@ -635,8 +695,15 @@ class LiveTradingBot:
                 return False
             
             if total_exposure >= FTMO_CONFIG.max_pending_orders:
-                log.info(f"[{symbol}] Max total exposure reached: {total_exposure}/{FTMO_CONFIG.max_pending_orders} (positions: {snapshot.open_positions}, pending: {pending_count})")
-                return False
+                replaced = self._try_replace_worst_pending(
+                    new_symbol=symbol,
+                    new_confluence=setup.get("confluence_score", 0),
+                    new_entry_distance_r=entry_distance_r,
+                )
+                if not replaced:
+                    log.info(f"[{symbol}] Max total exposure reached: {total_exposure}/{FTMO_CONFIG.max_pending_orders} (positions: {snapshot.open_positions}, pending: {pending_count})")
+                    return False
+                pending_count = len([s for s in self.pending_setups.values() if s.status == "pending"])
             
             if snapshot.total_risk_pct >= FTMO_CONFIG.max_cumulative_risk_pct:
                 log.info(f"[{symbol}] Max cumulative risk reached: {snapshot.total_risk_pct:.1f}%/{FTMO_CONFIG.max_cumulative_risk_pct}%")
@@ -760,7 +827,9 @@ class LiveTradingBot:
                 tp4=tp4,
                 tp5=tp5,
                 confluence=confluence,
+                confluence_score=confluence,
                 quality_factors=quality_factors,
+                entry_distance_r=entry_distance_r,
                 created_at=datetime.now(timezone.utc).isoformat(),
                 order_ticket=result.order_id,
                 status="filled",
@@ -809,7 +878,9 @@ class LiveTradingBot:
                 tp4=tp4,
                 tp5=tp5,
                 confluence=confluence,
+                confluence_score=confluence,
                 quality_factors=quality_factors,
+                entry_distance_r=entry_distance_r,
                 created_at=datetime.now(timezone.utc).isoformat(),
                 order_ticket=result.order_id,
                 status="pending",

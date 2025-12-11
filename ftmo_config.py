@@ -43,7 +43,7 @@ class FTMO10KConfig:
     max_pending_orders: int = 5  # Max 5 pending orders
 
     # === ENTRY OPTIMIZATION ===
-    max_entry_distance_r: float = 2.0  # Max 2R distance from current price
+    max_entry_distance_r: float = 1.0  # Max 1R distance from current price (realistic anticipation)
     immediate_entry_r: float = 0.4  # Execute immediately if within 0.4R
 
     # === PENDING ORDER SETTINGS ===
