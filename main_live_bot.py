@@ -1529,7 +1529,7 @@ class LiveTradingBot:
         log.info(f"Using SAME strategy as backtests (strategy_core.py)")
         log.info(f"FTMO Risk Limits:")
         log.info(f"  - Max single trade risk: 0.75% (Challenge Mode)")
-        log.info(f"  - Max cumulative risk: 3.5%")
+        log.info(f"  - Max cumulative risk: {FTMO_CONFIG.max_cumulative_risk_pct}%")
         log.info(f"  - Emergency close at: 4.5% daily loss / 8% drawdown")
         log.info(f"  - Partial TPs: 45% TP1, 30% TP2, 25% TP3 (Challenge Mode)")
         log.info(f"Server: {MT5_SERVER}")
