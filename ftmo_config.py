@@ -40,7 +40,7 @@ class FTMO10KConfig:
     max_concurrent_trades: int = 10  # Backtest used up to 21, but 10 balances opportunity with risk
     max_trades_per_day: int = 10  # Increased to match concurrent capacity
     max_trades_per_week: int = 40  # Increased proportionally
-    max_pending_orders: int = 10  # Match concurrent trades limit
+    max_pending_orders: int = 20  # Increased pending orders limit
 
     # === ENTRY OPTIMIZATION ===
     max_entry_distance_r: float = 1.0  # Max 1R distance from current price (realistic anticipation)
@@ -138,8 +138,8 @@ class FTMO10KConfig:
             raise ValueError("Max daily loss cannot exceed 5% for FTMO")
         if self.max_total_drawdown_pct > 10.0:
             raise ValueError("Max total drawdown cannot exceed 10% for FTMO")
-        if self.max_concurrent_trades > 5:
-            raise ValueError("Max concurrent trades should not exceed 5 for safety")
+        if self.max_concurrent_trades > 10:
+            raise ValueError("Max concurrent trades should not exceed 10 for safety")
 
     def get_risk_pct(self, daily_loss_pct: float, total_dd_pct: float) -> float:
         """
