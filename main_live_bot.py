@@ -648,34 +648,40 @@ class LiveTradingBot:
                 log.warning(f"[{symbol}] Risk percentage is 0 - trading halted")
                 return False
             
-            risk_usd = snapshot.balance * (risk_pct / 100)
-            risk_pips = abs(entry - sl) / get_pip_size(symbol)
-            
-            from tradr.risk.position_sizing import get_pip_value
-            pip_value = get_pip_value(broker_symbol, entry)
-            
-            if pip_value <= 0 or risk_pips <= 0:
-                log.warning(f"[{symbol}] Cannot calculate lot size: pip_value={pip_value}, risk_pips={risk_pips}")
-                return False
-            
-            lot_size = risk_usd / (risk_pips * pip_value)
+            from tradr.risk.position_sizing import calculate_lot_size
             
             symbol_info = self.mt5.get_symbol_info(broker_symbol)
+            max_lot = symbol_info.get('max_lot', 100.0) if symbol_info else 100.0
+            min_lot = symbol_info.get('min_lot', 0.01) if symbol_info else 0.01
+            
+            lot_result = calculate_lot_size(
+                symbol=broker_symbol,
+                account_balance=snapshot.balance,
+                risk_percent=risk_pct / 100,
+                entry_price=entry,
+                stop_loss_price=sl,
+                max_lot=max_lot,
+                min_lot=min_lot,
+            )
+            
+            if lot_result.get("error") or lot_result["lot_size"] <= 0:
+                log.warning(f"[{symbol}] Cannot calculate lot size: {lot_result.get('error', 'unknown error')}")
+                return False
+            
+            lot_size = lot_result["lot_size"]
+            risk_usd = lot_result["risk_usd"]
+            risk_pips = lot_result["stop_pips"]
+            
             if symbol_info:
                 lot_step = symbol_info.get('lot_step', 0.01)
-                min_lot = symbol_info.get('min_lot', 0.01)
-                max_lot = symbol_info.get('max_lot', 100.0)
-                
                 lot_size = max(min_lot, round(lot_size / lot_step) * lot_step)
                 lot_size = min(lot_size, max_lot)
-            else:
-                lot_size = round(lot_size, 2)
-                lot_size = max(0.01, lot_size)
             
             log.info(f"[{symbol}] Risk calculation:")
             log.info(f"  Balance: ${snapshot.balance:.2f}")
             log.info(f"  Risk %: {risk_pct:.2f}% (daily loss: {daily_loss_pct:.1f}%, DD: {total_dd_pct:.1f}%)")
             log.info(f"  Risk $: ${risk_usd:.2f}")
+            log.info(f"  Stop pips: {risk_pips:.1f}")
             log.info(f"  Lot size: {lot_size}")
             
             simulated_risk = snapshot.total_risk_usd + risk_usd
