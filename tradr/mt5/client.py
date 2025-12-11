@@ -610,13 +610,15 @@ class MT5Client:
             "type": order_type,
             "price": entry_price,
             "sl": sl,
-            "tp": tp,
             "magic": self.MAGIC_NUMBER,
             "comment": self.COMMENT,
             "type_time": mt5.ORDER_TIME_SPECIFIED,
             "expiration": expiration_timestamp,
             "type_filling": mt5.ORDER_FILLING_RETURN,
         }
+        
+        if tp and tp > 0:
+            request["tp"] = tp
         
         result = mt5.order_send(request)
         
@@ -748,13 +750,15 @@ class MT5Client:
             "type": order_type,
             "price": price,
             "sl": sl,
-            "tp": tp,
             "deviation": deviation,
             "magic": self.MAGIC_NUMBER,
             "comment": self.COMMENT,
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
+        
+        if tp and tp > 0:
+            request["tp"] = tp
         
         result = mt5.order_send(request)
         

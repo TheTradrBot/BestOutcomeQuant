@@ -1,0 +1,661 @@
+PS C:\mt5bot-new> python main_live_bot.py
+[config] ✓ Loaded environment from C:\mt5bot-new\.env
+2025-12-11 10:13:24 | INFO     | tradr | Challenge already active (Phase 1) - continuing...
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | TRADR BOT - LIVE TRADING (FTMO COMPLIANT)
+2025-12-11 10:13:24 | INFO     | tradr | *** CHALLENGE MODE: ELITE PROTECTION ENABLED ***
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | Using SAME strategy as backtests (strategy_core.py)
+2025-12-11 10:13:24 | INFO     | tradr | FTMO Risk Limits:
+2025-12-11 10:13:24 | INFO     | tradr |   - Max single trade risk: 0.75% (Challenge Mode)
+2025-12-11 10:13:24 | INFO     | tradr |   - Max cumulative risk: 3.5%
+2025-12-11 10:13:24 | INFO     | tradr |   - Emergency close at: 4.5% daily loss / 8% drawdown
+2025-12-11 10:13:24 | INFO     | tradr |   - Partial TPs: 45% TP1, 30% TP2, 25% TP3 (Challenge Mode)
+2025-12-11 10:13:24 | INFO     | tradr | Server:
+2025-12-11 10:13:24 | INFO     | tradr | Login: 1512190437
+2025-12-11 10:13:24 | INFO     | tradr | Scan Interval: 4 hours
+2025-12-11 10:13:24 | INFO     | tradr | Validate Interval: 10 minutes
+2025-12-11 10:13:24 | INFO     | tradr | P/L Monitor Interval: 10 seconds (elite protection)
+2025-12-11 10:13:24 | INFO     | tradr | Strategy Mode: standard
+2025-12-11 10:13:24 | INFO     | tradr | Min Confluence: 3/7
+2025-12-11 10:13:24 | INFO     | tradr | Symbols: 34
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | CONNECTING TO MT5
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+[MT5] Connected: 1512190437 @ FTMO-Demo
+[MT5] Balance: $9,738.99, Equity: $9,741.82
+2025-12-11 10:13:24 | INFO     | tradr | Connected: 1512190437 @ FTMO-Demo
+2025-12-11 10:13:24 | INFO     | tradr | Balance: $9,738.99
+2025-12-11 10:13:24 | INFO     | tradr | Equity: $9,741.82
+2025-12-11 10:13:24 | INFO     | tradr | Leverage: 1:100
+2025-12-11 10:13:24 | INFO     | tradr |
+======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | DISCOVERING BROKER SYMBOLS
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | Broker has 131 total symbols
+2025-12-11 10:13:24 | INFO     | tradr | ✓ EUR_USD         (OANDA) -> EURUSD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ GBP_USD         (OANDA) -> GBPUSD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ USD_JPY         (OANDA) -> USDJPY (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ USD_CHF         (OANDA) -> USDCHF (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ USD_CAD         (OANDA) -> USDCAD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ AUD_USD         (OANDA) -> AUDUSD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ NZD_USD         (OANDA) -> NZDUSD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ EUR_GBP         (OANDA) -> EURGBP (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ EUR_JPY         (OANDA) -> EURJPY (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ EUR_CHF         (OANDA) -> EURCHF (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ EUR_AUD         (OANDA) -> EURAUD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ EUR_CAD         (OANDA) -> EURCAD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ EUR_NZD         (OANDA) -> EURNZD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ GBP_JPY         (OANDA) -> GBPJPY (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ GBP_CHF         (OANDA) -> GBPCHF (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ GBP_AUD         (OANDA) -> GBPAUD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ GBP_CAD         (OANDA) -> GBPCAD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ GBP_NZD         (OANDA) -> GBPNZD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ AUD_JPY         (OANDA) -> AUDJPY (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ AUD_CHF         (OANDA) -> AUDCHF (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ AUD_CAD         (OANDA) -> AUDCAD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ AUD_NZD         (OANDA) -> AUDNZD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ NZD_JPY         (OANDA) -> NZDJPY (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ NZD_CHF         (OANDA) -> NZDCHF (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ NZD_CAD         (OANDA) -> NZDCAD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ CAD_JPY         (OANDA) -> CADJPY (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ CAD_CHF         (OANDA) -> CADCHF (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ CHF_JPY         (OANDA) -> CHFJPY (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ XAU_USD         (OANDA) -> XAUUSD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ XAG_USD         (OANDA) -> XAGUSD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ SPX500_USD      (OANDA) -> US500.cash (FTMO fallback)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ NAS100_USD      (OANDA) -> US100.cash (FTMO fallback)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ BTC_USD         (OANDA) -> BTCUSD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ ETH_USD         (OANDA) -> ETHUSD (FTMO)
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | Mapped 34/34 symbols
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr |
+======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | VALIDATING SYMBOL MAPPING
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | ✓ EUR_USD -> EURUSD (digits: 5, spread: 0)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ GBP_USD -> GBPUSD (digits: 5, spread: 4)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ USD_JPY -> USDJPY (digits: 3, spread: 5)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ USD_CHF -> USDCHF (digits: 5, spread: 6)
+2025-12-11 10:13:24 | INFO     | tradr | ✓ USD_CAD -> USDCAD (digits: 5, spread: 6)
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | Syncing risk manager with MT5 account...
+[RiskManager] Syncing balance: 9741.12 -> 9738.99
+2025-12-11 10:13:24 | INFO     | tradr | Risk manager synced: Balance=$9,738.99, Equity=$9,741.82
+2025-12-11 10:13:24 | INFO     | tradr | Initializing Challenge Risk Manager (FTMO 10K COMPLIANT)...
+[RISK] Loaded state from challenge_risk_state.json
+[RISK] ======================================================================
+[RISK] CHALLENGE RISK MANAGER INITIALIZED
+[RISK]   Mode: ENABLED
+[RISK]   Phase: 1
+[RISK]   Account Size: $9,738.99
+[RISK]   Max Daily Loss: 5.0%
+[RISK]   Max Drawdown: 10.0%
+[RISK]   Max Risk/Trade: 0.9500000000000014%
+[RISK]   Max Concurrent Trades: 3
+[RISK] ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | Challenge Risk Manager initialized with ELITE PROTECTION
+2025-12-11 10:13:24 | INFO     | tradr | Starting trading loop...
+2025-12-11 10:13:24 | INFO     | tradr | Press Ctrl+C to stop
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | MARKET SCAN - 2025-12-11 18:13 UTC
+2025-12-11 10:13:24 | INFO     | tradr | Strategy Mode: standard (Min Confluence: 3/7)
+2025-12-11 10:13:24 | INFO     | tradr | Using PENDING ORDERS (like backtest)
+2025-12-11 10:13:24 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:24 | INFO     | tradr | [EUR_USD] Scanning (OANDA: EUR_USD, FTMO: EURUSD)...
+2025-12-11 10:13:24 | INFO     | tradr | [EUR_USD] BULLISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:24 | INFO     | tradr | [EUR_USD] Entry too far: 1.15504 is 1.87R from current 1.17552 (max: 1.0R)
+2025-12-11 10:13:25 | INFO     | tradr | [GBP_USD] Scanning (OANDA: GBP_USD, FTMO: GBPUSD)...
+2025-12-11 10:13:25 | INFO     | tradr | [GBP_USD] BULLISH | Conf: 2/7 | Quality: 1 | Status: scan_only
+2025-12-11 10:13:26 | INFO     | tradr | [USD_JPY] Scanning (OANDA: USD_JPY, FTMO: USDJPY)...
+2025-12-11 10:13:26 | INFO     | tradr | [USD_JPY] Already in position, skipping
+2025-12-11 10:13:26 | INFO     | tradr | [USD_CHF] Scanning (OANDA: USD_CHF, FTMO: USDCHF)...
+2025-12-11 10:13:26 | INFO     | tradr | [USD_CHF] BEARISH | Conf: 4/7 | Quality: 3 | Status: active
+2025-12-11 10:13:26 | INFO     | tradr | [USD_CHF] Entry proximity OK: 0.79R from current price
+2025-12-11 10:13:26 | INFO     | tradr | [USD_CHF] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:26 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:26 | INFO     | tradr |   Confluence: 4/7
+2025-12-11 10:13:26 | INFO     | tradr |   Current Price: 0.79356
+2025-12-11 10:13:26 | INFO     | tradr |   Entry: 0.80301 (0.79R away)
+2025-12-11 10:13:26 | INFO     | tradr |   SL: 0.81499 (1197.9 pips)
+2025-12-11 10:13:26 | INFO     | tradr |   TP1: 0.79582 (0.6R)
+2025-12-11 10:13:26 | INFO     | tradr |   TP2: 0.78864 (1.2R)
+2025-12-11 10:13:26 | INFO     | tradr |   TP3: 0.77905 (2.0R)
+2025-12-11 10:13:26 | INFO     | tradr |   TP4: 0.77306 (2.5R)
+2025-12-11 10:13:26 | INFO     | tradr |   TP5: 0.76108 (3.5R)
+2025-12-11 10:13:26 | INFO     | tradr | [USD_CHF] Risk calculation:
+2025-12-11 10:13:26 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:26 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:26 | INFO     | tradr |   Risk $: $104.43
+2025-12-11 10:13:26 | INFO     | tradr |   Stop pips: 119.8
+2025-12-11 10:13:26 | INFO     | tradr |   Lot size: 0.07
+2025-12-11 10:13:26 | INFO     | tradr | [USD_CHF] Price 0.79R from entry - using PENDING ORDER
+2025-12-11 10:13:26 | INFO     | tradr | [USD_CHF] Placing PENDING ORDER:
+2025-12-11 10:13:26 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:26 | INFO     | tradr |   Entry Level: 0.80301
+2025-12-11 10:13:26 | INFO     | tradr |   SL: 0.81499
+2025-12-11 10:13:26 | INFO     | tradr |   TP1: 0.79582
+2025-12-11 10:13:26 | INFO     | tradr |   TP5: 0.76108
+2025-12-11 10:13:26 | INFO     | tradr |   Lot Size: 0.07
+2025-12-11 10:13:26 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:26 | ERROR    | tradr | [USD_CHF] Pending order FAILED: Order send returned None
+2025-12-11 10:13:27 | INFO     | tradr | [USD_CAD] Scanning (OANDA: USD_CAD, FTMO: USDCAD)...
+2025-12-11 10:13:27 | INFO     | tradr | [USD_CAD] BEARISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:27 | INFO     | tradr | [USD_CAD] Entry too far: 1.40439 is 2.16R from current 1.37701 (max: 1.0R)
+2025-12-11 10:13:28 | INFO     | tradr | [AUD_USD] Scanning (OANDA: AUD_USD, FTMO: AUDUSD)...
+2025-12-11 10:13:28 | INFO     | tradr | [AUD_USD] BULLISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:28 | INFO     | tradr | [AUD_USD] Entry too far: 0.65004 is 1.69R from current 0.66720 (max: 1.0R)
+2025-12-11 10:13:28 | INFO     | tradr | [NZD_USD] Scanning (OANDA: NZD_USD, FTMO: NZDUSD)...
+2025-12-11 10:13:28 | INFO     | tradr | [NZD_USD] BULLISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:28 | INFO     | tradr | [NZD_USD] Entry too far: 0.56630 is 1.48R from current 0.58196 (max: 1.0R)
+2025-12-11 10:13:29 | INFO     | tradr | [EUR_GBP] Scanning (OANDA: EUR_GBP, FTMO: EURGBP)...
+2025-12-11 10:13:29 | INFO     | tradr | [EUR_GBP] BEARISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:29 | INFO     | tradr | [EUR_GBP] Entry proximity OK: 0.95R from current price
+2025-12-11 10:13:29 | INFO     | tradr | [EUR_GBP] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:29 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:29 | INFO     | tradr |   Confluence: 3/7
+2025-12-11 10:13:29 | INFO     | tradr |   Current Price: 0.87596
+2025-12-11 10:13:29 | INFO     | tradr |   Entry: 0.88197 (0.95R away)
+2025-12-11 10:13:29 | INFO     | tradr |   SL: 0.88828 (631.5 pips)
+2025-12-11 10:13:29 | INFO     | tradr |   TP1: 0.87818 (0.6R)
+2025-12-11 10:13:29 | INFO     | tradr |   TP2: 0.87439 (1.2R)
+2025-12-11 10:13:29 | INFO     | tradr |   TP3: 0.86934 (2.0R)
+2025-12-11 10:13:29 | INFO     | tradr |   TP4: 0.86618 (2.5R)
+2025-12-11 10:13:29 | INFO     | tradr |   TP5: 0.85986 (3.5R)
+2025-12-11 10:13:29 | INFO     | tradr | [EUR_GBP] Risk calculation:
+2025-12-11 10:13:29 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:29 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:29 | INFO     | tradr |   Risk $: $94.73
+2025-12-11 10:13:29 | INFO     | tradr |   Stop pips: 63.2
+2025-12-11 10:13:29 | INFO     | tradr |   Lot size: 0.15
+2025-12-11 10:13:29 | INFO     | tradr | [EUR_GBP] Price 0.95R from entry - using PENDING ORDER
+2025-12-11 10:13:29 | INFO     | tradr | [EUR_GBP] Placing PENDING ORDER:
+2025-12-11 10:13:29 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:29 | INFO     | tradr |   Entry Level: 0.88197
+2025-12-11 10:13:29 | INFO     | tradr |   SL: 0.88828
+2025-12-11 10:13:29 | INFO     | tradr |   TP1: 0.87818
+2025-12-11 10:13:29 | INFO     | tradr |   TP5: 0.85986
+2025-12-11 10:13:29 | INFO     | tradr |   Lot Size: 0.15
+2025-12-11 10:13:29 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:29 | ERROR    | tradr | [EUR_GBP] Pending order FAILED: Order send returned None
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_JPY] Scanning (OANDA: EUR_JPY, FTMO: EURJPY)...
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_JPY] BULLISH | Conf: 4/7 | Quality: 3 | Status: active
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_JPY] Entry too far: 178.10489 is 1.51R from current 182.49400 (max: 1.0R)
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_CHF] Scanning (OANDA: EUR_CHF, FTMO: EURCHF)...
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_CHF] BULLISH | Conf: 4/7 | Quality: 3 | Status: active
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_CHF] Entry proximity OK: 0.65R from current price
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_CHF] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:30 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:30 | INFO     | tradr |   Confluence: 4/7
+2025-12-11 10:13:30 | INFO     | tradr |   Current Price: 0.93276
+2025-12-11 10:13:30 | INFO     | tradr |   Entry: 0.92618 (0.65R away)
+2025-12-11 10:13:30 | INFO     | tradr |   SL: 0.91610 (1007.9 pips)
+2025-12-11 10:13:30 | INFO     | tradr |   TP1: 0.93223 (0.6R)
+2025-12-11 10:13:30 | INFO     | tradr |   TP2: 0.93828 (1.2R)
+2025-12-11 10:13:30 | INFO     | tradr |   TP3: 0.94634 (2.0R)
+2025-12-11 10:13:30 | INFO     | tradr |   TP4: 0.95138 (2.5R)
+2025-12-11 10:13:30 | INFO     | tradr |   TP5: 0.96146 (3.5R)
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_CHF] Risk calculation:
+2025-12-11 10:13:30 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:30 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:30 | INFO     | tradr |   Risk $: $100.79
+2025-12-11 10:13:30 | INFO     | tradr |   Stop pips: 100.8
+2025-12-11 10:13:30 | INFO     | tradr |   Lot size: 0.1
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_CHF] Price 0.65R from entry - using PENDING ORDER
+2025-12-11 10:13:30 | INFO     | tradr | [EUR_CHF] Placing PENDING ORDER:
+2025-12-11 10:13:30 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:30 | INFO     | tradr |   Entry Level: 0.92618
+2025-12-11 10:13:30 | INFO     | tradr |   SL: 0.91610
+2025-12-11 10:13:30 | INFO     | tradr |   TP1: 0.93223
+2025-12-11 10:13:30 | INFO     | tradr |   TP5: 0.96146
+2025-12-11 10:13:30 | INFO     | tradr |   Lot Size: 0.1
+2025-12-11 10:13:30 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:30 | ERROR    | tradr | [EUR_CHF] Pending order FAILED: Order send returned None
+2025-12-11 10:13:31 | INFO     | tradr | [EUR_AUD] Scanning (OANDA: EUR_AUD, FTMO: EURAUD)...
+2025-12-11 10:13:31 | INFO     | tradr | [EUR_AUD] BEARISH | Conf: 5/7 | Quality: 3 | Status: active
+2025-12-11 10:13:31 | INFO     | tradr | [EUR_AUD] Entry proximity OK: 0.94R from current price
+2025-12-11 10:13:31 | INFO     | tradr | [EUR_AUD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:31 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:31 | INFO     | tradr |   Confluence: 5/7
+2025-12-11 10:13:31 | INFO     | tradr |   Current Price: 1.76195
+2025-12-11 10:13:31 | INFO     | tradr |   Entry: 1.78190 (0.94R away)
+2025-12-11 10:13:31 | INFO     | tradr |   SL: 1.80315 (2125.0 pips)
+2025-12-11 10:13:31 | INFO     | tradr |   TP1: 1.76915 (0.6R)
+2025-12-11 10:13:31 | INFO     | tradr |   TP2: 1.75640 (1.2R)
+2025-12-11 10:13:31 | INFO     | tradr |   TP3: 1.73940 (2.0R)
+2025-12-11 10:13:31 | INFO     | tradr |   TP4: 1.72877 (2.5R)
+2025-12-11 10:13:31 | INFO     | tradr |   TP5: 1.70752 (3.5R)
+2025-12-11 10:13:31 | INFO     | tradr | [EUR_AUD] Risk calculation:
+2025-12-11 10:13:31 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:31 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:31 | INFO     | tradr |   Risk $: $106.25
+2025-12-11 10:13:31 | INFO     | tradr |   Stop pips: 212.5
+2025-12-11 10:13:31 | INFO     | tradr |   Lot size: 0.05
+2025-12-11 10:13:31 | INFO     | tradr | [EUR_AUD] Price 0.94R from entry - using PENDING ORDER
+2025-12-11 10:13:31 | INFO     | tradr | [EUR_AUD] Placing PENDING ORDER:
+2025-12-11 10:13:31 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:31 | INFO     | tradr |   Entry Level: 1.78190
+2025-12-11 10:13:31 | INFO     | tradr |   SL: 1.80315
+2025-12-11 10:13:31 | INFO     | tradr |   TP1: 1.76915
+2025-12-11 10:13:31 | INFO     | tradr |   TP5: 1.70752
+2025-12-11 10:13:31 | INFO     | tradr |   Lot Size: 0.05
+2025-12-11 10:13:31 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:31 | ERROR    | tradr | [EUR_AUD] Pending order FAILED: Order send returned None
+2025-12-11 10:13:32 | INFO     | tradr | [EUR_CAD] Scanning (OANDA: EUR_CAD, FTMO: EURCAD)...
+2025-12-11 10:13:32 | INFO     | tradr | [EUR_CAD] BEARISH | Conf: 5/7 | Quality: 3 | Status: active
+2025-12-11 10:13:32 | INFO     | tradr | [EUR_CAD] Entry proximity OK: 0.35R from current price
+2025-12-11 10:13:32 | INFO     | tradr | [EUR_CAD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:32 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:32 | INFO     | tradr |   Confluence: 5/7
+2025-12-11 10:13:32 | INFO     | tradr |   Current Price: 1.61853
+2025-12-11 10:13:32 | INFO     | tradr |   Entry: 1.62354 (0.35R away)
+2025-12-11 10:13:32 | INFO     | tradr |   SL: 1.63795 (1440.8 pips)
+2025-12-11 10:13:32 | INFO     | tradr |   TP1: 1.61490 (0.6R)
+2025-12-11 10:13:32 | INFO     | tradr |   TP2: 1.60625 (1.2R)
+2025-12-11 10:13:32 | INFO     | tradr |   TP3: 1.59472 (2.0R)
+2025-12-11 10:13:32 | INFO     | tradr |   TP4: 1.58752 (2.5R)
+2025-12-11 10:13:32 | INFO     | tradr |   TP5: 1.57311 (3.5R)
+2025-12-11 10:13:32 | INFO     | tradr | [EUR_CAD] Risk calculation:
+2025-12-11 10:13:32 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:32 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:32 | INFO     | tradr |   Risk $: $100.86
+2025-12-11 10:13:32 | INFO     | tradr |   Stop pips: 144.1
+2025-12-11 10:13:32 | INFO     | tradr |   Lot size: 0.07
+2025-12-11 10:13:32 | INFO     | tradr | [EUR_CAD] Price at entry (0.35R) - using MARKET ORDER
+2025-12-11 10:13:32 | ERROR    | tradr | [EUR_CAD] Market order FAILED: Order send returned None
+2025-12-11 10:13:32 | INFO     | tradr | [EUR_NZD] Scanning (OANDA: EUR_NZD, FTMO: EURNZD)...
+2025-12-11 10:13:33 | INFO     | tradr | [EUR_NZD] BEARISH | Conf: 3/7 | Quality: 1 | Status: active
+2025-12-11 10:13:33 | INFO     | tradr | [EUR_NZD] Entry proximity OK: 0.69R from current price
+2025-12-11 10:13:33 | INFO     | tradr | [EUR_NZD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:33 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:33 | INFO     | tradr |   Confluence: 3/7
+2025-12-11 10:13:33 | INFO     | tradr |   Current Price: 2.02004
+2025-12-11 10:13:33 | INFO     | tradr |   Entry: 2.04210 (0.69R away)
+2025-12-11 10:13:33 | INFO     | tradr |   SL: 2.07408 (3198.6 pips)
+2025-12-11 10:13:33 | INFO     | tradr |   TP1: 2.02291 (0.6R)
+2025-12-11 10:13:33 | INFO     | tradr |   TP2: 2.00372 (1.2R)
+2025-12-11 10:13:33 | INFO     | tradr |   TP3: 1.97813 (2.0R)
+2025-12-11 10:13:33 | INFO     | tradr |   TP4: 1.96213 (2.5R)
+2025-12-11 10:13:33 | INFO     | tradr |   TP5: 1.93015 (3.5R)
+2025-12-11 10:13:33 | INFO     | tradr | [EUR_NZD] Risk calculation:
+2025-12-11 10:13:33 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:33 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:33 | INFO     | tradr |   Risk $: $95.96
+2025-12-11 10:13:33 | INFO     | tradr |   Stop pips: 319.9
+2025-12-11 10:13:33 | INFO     | tradr |   Lot size: 0.03
+2025-12-11 10:13:33 | INFO     | tradr | [EUR_NZD] Price 0.69R from entry - using PENDING ORDER
+2025-12-11 10:13:33 | INFO     | tradr | [EUR_NZD] Placing PENDING ORDER:
+2025-12-11 10:13:33 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:33 | INFO     | tradr |   Entry Level: 2.04210
+2025-12-11 10:13:33 | INFO     | tradr |   SL: 2.07408
+2025-12-11 10:13:33 | INFO     | tradr |   TP1: 2.02291
+2025-12-11 10:13:33 | INFO     | tradr |   TP5: 1.93015
+2025-12-11 10:13:33 | INFO     | tradr |   Lot Size: 0.03
+2025-12-11 10:13:33 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:33 | ERROR    | tradr | [EUR_NZD] Pending order FAILED: Order send returned None
+2025-12-11 10:13:33 | INFO     | tradr | [GBP_JPY] Scanning (OANDA: GBP_JPY, FTMO: GBPJPY)...
+2025-12-11 10:13:33 | INFO     | tradr | [GBP_JPY] BULLISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:33 | INFO     | tradr | [GBP_JPY] Entry too far: 202.03331 is 1.75R from current 208.34800 (max: 1.0R)
+2025-12-11 10:13:34 | INFO     | tradr | [GBP_CHF] Scanning (OANDA: GBP_CHF, FTMO: GBPCHF)...
+2025-12-11 10:13:34 | INFO     | tradr | [GBP_CHF] BULLISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:34 | INFO     | tradr | [GBP_CHF] Entry proximity OK: 0.73R from current price
+2025-12-11 10:13:34 | INFO     | tradr | [GBP_CHF] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:34 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:34 | INFO     | tradr |   Confluence: 3/7
+2025-12-11 10:13:34 | INFO     | tradr |   Current Price: 1.06482
+2025-12-11 10:13:34 | INFO     | tradr |   Entry: 1.05149 (0.73R away)
+2025-12-11 10:13:34 | INFO     | tradr |   SL: 1.03333 (1816.4 pips)
+2025-12-11 10:13:34 | INFO     | tradr |   TP1: 1.06239 (0.6R)
+2025-12-11 10:13:34 | INFO     | tradr |   TP2: 1.07329 (1.2R)
+2025-12-11 10:13:34 | INFO     | tradr |   TP3: 1.08782 (2.0R)
+2025-12-11 10:13:34 | INFO     | tradr |   TP4: 1.09690 (2.5R)
+2025-12-11 10:13:34 | INFO     | tradr |   TP5: 1.11507 (3.5R)
+2025-12-11 10:13:34 | INFO     | tradr | [GBP_CHF] Risk calculation:
+2025-12-11 10:13:34 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:34 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:34 | INFO     | tradr |   Risk $: $90.82
+2025-12-11 10:13:34 | INFO     | tradr |   Stop pips: 181.6
+2025-12-11 10:13:34 | INFO     | tradr |   Lot size: 0.05
+2025-12-11 10:13:34 | INFO     | tradr | [GBP_CHF] Price 0.73R from entry - using PENDING ORDER
+2025-12-11 10:13:34 | INFO     | tradr | [GBP_CHF] Placing PENDING ORDER:
+2025-12-11 10:13:34 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:34 | INFO     | tradr |   Entry Level: 1.05149
+2025-12-11 10:13:34 | INFO     | tradr |   SL: 1.03333
+2025-12-11 10:13:34 | INFO     | tradr |   TP1: 1.06239
+2025-12-11 10:13:34 | INFO     | tradr |   TP5: 1.11507
+2025-12-11 10:13:34 | INFO     | tradr |   Lot Size: 0.05
+2025-12-11 10:13:34 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:34 | ERROR    | tradr | [GBP_CHF] Pending order FAILED: Order send returned None
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_AUD] Scanning (OANDA: GBP_AUD, FTMO: GBPAUD)...
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_AUD] BEARISH | Conf: 4/7 | Quality: 2 | Status: active
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_AUD] Entry proximity OK: 0.98R from current price
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_AUD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:35 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:35 | INFO     | tradr |   Confluence: 4/7
+2025-12-11 10:13:35 | INFO     | tradr |   Current Price: 2.01152
+2025-12-11 10:13:35 | INFO     | tradr |   Entry: 2.05094 (0.98R away)
+2025-12-11 10:13:35 | INFO     | tradr |   SL: 2.09132 (4037.5 pips)
+2025-12-11 10:13:35 | INFO     | tradr |   TP1: 2.02672 (0.6R)
+2025-12-11 10:13:35 | INFO     | tradr |   TP2: 2.00249 (1.2R)
+2025-12-11 10:13:35 | INFO     | tradr |   TP3: 1.97019 (2.0R)
+2025-12-11 10:13:35 | INFO     | tradr |   TP4: 1.95000 (2.5R)
+2025-12-11 10:13:35 | INFO     | tradr |   TP5: 1.90963 (3.5R)
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_AUD] Risk calculation:
+2025-12-11 10:13:35 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:35 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:35 | INFO     | tradr |   Risk $: $80.75
+2025-12-11 10:13:35 | INFO     | tradr |   Stop pips: 403.8
+2025-12-11 10:13:35 | INFO     | tradr |   Lot size: 0.02
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_AUD] Price 0.98R from entry - using PENDING ORDER
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_AUD] Placing PENDING ORDER:
+2025-12-11 10:13:35 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:35 | INFO     | tradr |   Entry Level: 2.05094
+2025-12-11 10:13:35 | INFO     | tradr |   SL: 2.09132
+2025-12-11 10:13:35 | INFO     | tradr |   TP1: 2.02672
+2025-12-11 10:13:35 | INFO     | tradr |   TP5: 1.90963
+2025-12-11 10:13:35 | INFO     | tradr |   Lot Size: 0.02
+2025-12-11 10:13:35 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:35 | ERROR    | tradr | [GBP_AUD] Pending order FAILED: Order send returned None
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_CAD] Scanning (OANDA: GBP_CAD, FTMO: GBPCAD)...
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_CAD] BEARISH | Conf: 6/7 | Quality: 4 | Status: active
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_CAD] Entry proximity OK: 0.33R from current price
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_CAD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:35 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:35 | INFO     | tradr |   Confluence: 6/7
+2025-12-11 10:13:35 | INFO     | tradr |   Current Price: 1.84772
+2025-12-11 10:13:35 | INFO     | tradr |   Entry: 1.85370 (0.33R away)
+2025-12-11 10:13:35 | INFO     | tradr |   SL: 1.87193 (1823.2 pips)
+2025-12-11 10:13:35 | INFO     | tradr |   TP1: 1.84276 (0.6R)
+2025-12-11 10:13:35 | INFO     | tradr |   TP2: 1.83182 (1.2R)
+2025-12-11 10:13:35 | INFO     | tradr |   TP3: 1.81723 (2.0R)
+2025-12-11 10:13:35 | INFO     | tradr |   TP4: 1.80812 (2.5R)
+2025-12-11 10:13:35 | INFO     | tradr |   TP5: 1.78989 (3.5R)
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_CAD] Risk calculation:
+2025-12-11 10:13:35 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:35 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:35 | INFO     | tradr |   Risk $: $91.16
+2025-12-11 10:13:35 | INFO     | tradr |   Stop pips: 182.3
+2025-12-11 10:13:35 | INFO     | tradr |   Lot size: 0.05
+2025-12-11 10:13:35 | INFO     | tradr | [GBP_CAD] Price at entry (0.33R) - using MARKET ORDER
+2025-12-11 10:13:35 | ERROR    | tradr | [GBP_CAD] Market order FAILED: Order send returned None
+2025-12-11 10:13:36 | INFO     | tradr | [GBP_NZD] Scanning (OANDA: GBP_NZD, FTMO: GBPNZD)...
+2025-12-11 10:13:36 | INFO     | tradr | [GBP_NZD] BEARISH | Conf: 4/7 | Quality: 2 | Status: active
+2025-12-11 10:13:36 | INFO     | tradr | [GBP_NZD] Entry proximity OK: 0.58R from current price
+2025-12-11 10:13:36 | INFO     | tradr | [GBP_NZD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:36 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:36 | INFO     | tradr |   Confluence: 4/7
+2025-12-11 10:13:36 | INFO     | tradr |   Current Price: 2.30613
+2025-12-11 10:13:36 | INFO     | tradr |   Entry: 2.32665 (0.58R away)
+2025-12-11 10:13:36 | INFO     | tradr |   SL: 2.36205 (3539.3 pips)
+2025-12-11 10:13:36 | INFO     | tradr |   TP1: 2.30542 (0.6R)
+2025-12-11 10:13:36 | INFO     | tradr |   TP2: 2.28418 (1.2R)
+2025-12-11 10:13:36 | INFO     | tradr |   TP3: 2.25587 (2.0R)
+2025-12-11 10:13:36 | INFO     | tradr |   TP4: 2.23817 (2.5R)
+2025-12-11 10:13:36 | INFO     | tradr |   TP5: 2.20278 (3.5R)
+2025-12-11 10:13:36 | INFO     | tradr | [GBP_NZD] Risk calculation:
+2025-12-11 10:13:36 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:36 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:36 | INFO     | tradr |   Risk $: $106.18
+2025-12-11 10:13:36 | INFO     | tradr |   Stop pips: 353.9
+2025-12-11 10:13:36 | INFO     | tradr |   Lot size: 0.03
+2025-12-11 10:13:36 | INFO     | tradr | [GBP_NZD] Price 0.58R from entry - using PENDING ORDER
+2025-12-11 10:13:36 | INFO     | tradr | [GBP_NZD] Placing PENDING ORDER:
+2025-12-11 10:13:36 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:36 | INFO     | tradr |   Entry Level: 2.32665
+2025-12-11 10:13:36 | INFO     | tradr |   SL: 2.36205
+2025-12-11 10:13:36 | INFO     | tradr |   TP1: 2.30542
+2025-12-11 10:13:36 | INFO     | tradr |   TP5: 2.20278
+2025-12-11 10:13:36 | INFO     | tradr |   Lot Size: 0.03
+2025-12-11 10:13:36 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:36 | ERROR    | tradr | [GBP_NZD] Pending order FAILED: Order send returned None
+2025-12-11 10:13:37 | INFO     | tradr | [AUD_JPY] Scanning (OANDA: AUD_JPY, FTMO: AUDJPY)...
+2025-12-11 10:13:37 | INFO     | tradr | [AUD_JPY] BULLISH | Conf: 4/7 | Quality: 2 | Status: active
+2025-12-11 10:13:37 | INFO     | tradr | [AUD_JPY] Entry too far: 100.22127 is 1.82R from current 103.57900 (max: 1.0R)
+2025-12-11 10:13:37 | INFO     | tradr | [AUD_CHF] Scanning (OANDA: AUD_CHF, FTMO: AUDCHF)...
+2025-12-11 10:13:37 | INFO     | tradr | [AUD_CHF] BULLISH | Conf: 4/7 | Quality: 2 | Status: active
+2025-12-11 10:13:37 | INFO     | tradr | [AUD_CHF] Entry too far: 0.51638 is 1.22R from current 0.52939 (max: 1.0R)
+2025-12-11 10:13:38 | INFO     | tradr | [AUD_CAD] Scanning (OANDA: AUD_CAD, FTMO: AUDCAD)...
+2025-12-11 10:13:38 | INFO     | tradr | [AUD_CAD] BULLISH | Conf: 4/7 | Quality: 3 | Status: active
+2025-12-11 10:13:38 | INFO     | tradr | [AUD_CAD] Entry proximity OK: 0.52R from current price
+2025-12-11 10:13:38 | INFO     | tradr | [AUD_CAD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:38 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:38 | INFO     | tradr |   Confluence: 4/7
+2025-12-11 10:13:38 | INFO     | tradr |   Current Price: 0.91854
+2025-12-11 10:13:38 | INFO     | tradr |   Entry: 0.91325 (0.52R away)
+2025-12-11 10:13:38 | INFO     | tradr |   SL: 0.90315 (1010.1 pips)
+2025-12-11 10:13:38 | INFO     | tradr |   TP1: 0.91931 (0.6R)
+2025-12-11 10:13:38 | INFO     | tradr |   TP2: 0.92537 (1.2R)
+2025-12-11 10:13:38 | INFO     | tradr |   TP3: 0.93345 (2.0R)
+2025-12-11 10:13:38 | INFO     | tradr |   TP4: 0.93850 (2.5R)
+2025-12-11 10:13:38 | INFO     | tradr |   TP5: 0.94860 (3.5R)
+2025-12-11 10:13:38 | INFO     | tradr | [AUD_CAD] Risk calculation:
+2025-12-11 10:13:38 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:38 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:38 | INFO     | tradr |   Risk $: $101.01
+2025-12-11 10:13:38 | INFO     | tradr |   Stop pips: 101.0
+2025-12-11 10:13:38 | INFO     | tradr |   Lot size: 0.1
+2025-12-11 10:13:38 | INFO     | tradr | [AUD_CAD] Price 0.52R from entry - using PENDING ORDER
+2025-12-11 10:13:38 | INFO     | tradr | [AUD_CAD] Placing PENDING ORDER:
+2025-12-11 10:13:38 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:38 | INFO     | tradr |   Entry Level: 0.91325
+2025-12-11 10:13:38 | INFO     | tradr |   SL: 0.90315
+2025-12-11 10:13:38 | INFO     | tradr |   TP1: 0.91931
+2025-12-11 10:13:38 | INFO     | tradr |   TP5: 0.94860
+2025-12-11 10:13:38 | INFO     | tradr |   Lot Size: 0.1
+2025-12-11 10:13:38 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:38 | ERROR    | tradr | [AUD_CAD] Pending order FAILED: Order send returned None
+2025-12-11 10:13:39 | INFO     | tradr | [AUD_NZD] Scanning (OANDA: AUD_NZD, FTMO: AUDNZD)...
+2025-12-11 10:13:39 | INFO     | tradr | [AUD_NZD] BULLISH | Conf: 4/7 | Quality: 3 | Status: active
+2025-12-11 10:13:39 | INFO     | tradr | [AUD_NZD] Entry proximity OK: 0.28R from current price
+2025-12-11 10:13:39 | INFO     | tradr | [AUD_NZD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:39 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:39 | INFO     | tradr |   Confluence: 4/7
+2025-12-11 10:13:39 | INFO     | tradr |   Current Price: 1.14639
+2025-12-11 10:13:39 | INFO     | tradr |   Entry: 1.14189 (0.28R away)
+2025-12-11 10:13:39 | INFO     | tradr |   SL: 1.12579 (1609.3 pips)
+2025-12-11 10:13:39 | INFO     | tradr |   TP1: 1.15154 (0.6R)
+2025-12-11 10:13:39 | INFO     | tradr |   TP2: 1.16120 (1.2R)
+2025-12-11 10:13:39 | INFO     | tradr |   TP3: 1.17407 (2.0R)
+2025-12-11 10:13:39 | INFO     | tradr |   TP4: 1.18212 (2.5R)
+2025-12-11 10:13:39 | INFO     | tradr |   TP5: 1.19821 (3.5R)
+2025-12-11 10:13:39 | INFO     | tradr | [AUD_NZD] Risk calculation:
+2025-12-11 10:13:39 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:39 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:39 | INFO     | tradr |   Risk $: $96.56
+2025-12-11 10:13:39 | INFO     | tradr |   Stop pips: 160.9
+2025-12-11 10:13:39 | INFO     | tradr |   Lot size: 0.06
+2025-12-11 10:13:39 | INFO     | tradr | [AUD_NZD] Price at entry (0.28R) - using MARKET ORDER
+2025-12-11 10:13:39 | ERROR    | tradr | [AUD_NZD] Market order FAILED: Order send returned None
+2025-12-11 10:13:40 | INFO     | tradr | [NZD_JPY] Scanning (OANDA: NZD_JPY, FTMO: NZDJPY)...
+2025-12-11 10:13:40 | INFO     | tradr | [NZD_JPY] BULLISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:40 | INFO     | tradr | [NZD_JPY] Entry too far: 86.68544 is 2.14R from current 90.33800 (max: 1.0R)
+2025-12-11 10:13:40 | INFO     | tradr | [NZD_CHF] Scanning (OANDA: NZD_CHF, FTMO: NZDCHF)...
+2025-12-11 10:13:40 | INFO     | tradr | [NZD_CHF] BULLISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:40 | INFO     | tradr | [NZD_CHF] Entry proximity OK: 0.29R from current price
+2025-12-11 10:13:40 | INFO     | tradr | [NZD_CHF] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:40 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:40 | INFO     | tradr |   Confluence: 3/7
+2025-12-11 10:13:40 | INFO     | tradr |   Current Price: 0.46169
+2025-12-11 10:13:40 | INFO     | tradr |   Entry: 0.45809 (0.29R away)
+2025-12-11 10:13:40 | INFO     | tradr |   SL: 0.44547 (1261.2 pips)
+2025-12-11 10:13:40 | INFO     | tradr |   TP1: 0.46565 (0.6R)
+2025-12-11 10:13:40 | INFO     | tradr |   TP2: 0.47322 (1.2R)
+2025-12-11 10:13:40 | INFO     | tradr |   TP3: 0.48331 (2.0R)
+2025-12-11 10:13:40 | INFO     | tradr |   TP4: 0.48961 (2.5R)
+2025-12-11 10:13:40 | INFO     | tradr |   TP5: 0.50223 (3.5R)
+2025-12-11 10:13:40 | INFO     | tradr | [NZD_CHF] Risk calculation:
+2025-12-11 10:13:40 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:40 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:40 | INFO     | tradr |   Risk $: $100.89
+2025-12-11 10:13:40 | INFO     | tradr |   Stop pips: 126.1
+2025-12-11 10:13:40 | INFO     | tradr |   Lot size: 0.08
+2025-12-11 10:13:40 | INFO     | tradr | [NZD_CHF] Price at entry (0.29R) - using MARKET ORDER
+2025-12-11 10:13:40 | ERROR    | tradr | [NZD_CHF] Market order FAILED: Order send returned None
+2025-12-11 10:13:41 | INFO     | tradr | [NZD_CAD] Scanning (OANDA: NZD_CAD, FTMO: NZDCAD)...
+2025-12-11 10:13:41 | INFO     | tradr | [NZD_CAD] BULLISH | Conf: 4/7 | Quality: 3 | Status: active
+2025-12-11 10:13:41 | INFO     | tradr | [NZD_CAD] Entry proximity OK: 0.72R from current price
+2025-12-11 10:13:41 | INFO     | tradr | [NZD_CAD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:41 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:41 | INFO     | tradr |   Confluence: 4/7
+2025-12-11 10:13:41 | INFO     | tradr |   Current Price: 0.80113
+2025-12-11 10:13:41 | INFO     | tradr |   Entry: 0.79372 (0.72R away)
+2025-12-11 10:13:41 | INFO     | tradr |   SL: 0.78339 (1032.9 pips)
+2025-12-11 10:13:41 | INFO     | tradr |   TP1: 0.79992 (0.6R)
+2025-12-11 10:13:41 | INFO     | tradr |   TP2: 0.80612 (1.2R)
+2025-12-11 10:13:41 | INFO     | tradr |   TP3: 0.81438 (2.0R)
+2025-12-11 10:13:41 | INFO     | tradr |   TP4: 0.81954 (2.5R)
+2025-12-11 10:13:41 | INFO     | tradr |   TP5: 0.82987 (3.5R)
+2025-12-11 10:13:41 | INFO     | tradr | [NZD_CAD] Risk calculation:
+2025-12-11 10:13:41 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:41 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:41 | INFO     | tradr |   Risk $: $92.96
+2025-12-11 10:13:41 | INFO     | tradr |   Stop pips: 103.3
+2025-12-11 10:13:41 | INFO     | tradr |   Lot size: 0.09
+2025-12-11 10:13:41 | INFO     | tradr | [NZD_CAD] Price 0.72R from entry - using PENDING ORDER
+2025-12-11 10:13:41 | INFO     | tradr | [NZD_CAD] Placing PENDING ORDER:
+2025-12-11 10:13:41 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:41 | INFO     | tradr |   Entry Level: 0.79372
+2025-12-11 10:13:41 | INFO     | tradr |   SL: 0.78339
+2025-12-11 10:13:41 | INFO     | tradr |   TP1: 0.79992
+2025-12-11 10:13:41 | INFO     | tradr |   TP5: 0.82987
+2025-12-11 10:13:41 | INFO     | tradr |   Lot Size: 0.09
+2025-12-11 10:13:41 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:41 | ERROR    | tradr | [NZD_CAD] Pending order FAILED: Order send returned None
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_JPY] Scanning (OANDA: CAD_JPY, FTMO: CADJPY)...
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_JPY] BULLISH | Conf: 5/7 | Quality: 3 | Status: active
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_JPY] Entry too far: 110.60010 is 1.48R from current 112.76100 (max: 1.0R)
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_CHF] Scanning (OANDA: CAD_CHF, FTMO: CADCHF)...
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_CHF] BULLISH | Conf: 4/7 | Quality: 2 | Status: active
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_CHF] Entry proximity OK: 0.61R from current price
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_CHF] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:42 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:42 | INFO     | tradr |   Confluence: 4/7
+2025-12-11 10:13:42 | INFO     | tradr |   Current Price: 0.57632
+2025-12-11 10:13:42 | INFO     | tradr |   Entry: 0.56951 (0.61R away)
+2025-12-11 10:13:42 | INFO     | tradr |   SL: 0.55832 (1118.3 pips)
+2025-12-11 10:13:42 | INFO     | tradr |   TP1: 0.57622 (0.6R)
+2025-12-11 10:13:42 | INFO     | tradr |   TP2: 0.58292 (1.2R)
+2025-12-11 10:13:42 | INFO     | tradr |   TP3: 0.59187 (2.0R)
+2025-12-11 10:13:42 | INFO     | tradr |   TP4: 0.59746 (2.5R)
+2025-12-11 10:13:42 | INFO     | tradr |   TP5: 0.60864 (3.5R)
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_CHF] Risk calculation:
+2025-12-11 10:13:42 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:42 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:42 | INFO     | tradr |   Risk $: $100.64
+2025-12-11 10:13:42 | INFO     | tradr |   Stop pips: 111.8
+2025-12-11 10:13:42 | INFO     | tradr |   Lot size: 0.09
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_CHF] Price 0.61R from entry - using PENDING ORDER
+2025-12-11 10:13:42 | INFO     | tradr | [CAD_CHF] Placing PENDING ORDER:
+2025-12-11 10:13:42 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:42 | INFO     | tradr |   Entry Level: 0.56951
+2025-12-11 10:13:42 | INFO     | tradr |   SL: 0.55832
+2025-12-11 10:13:42 | INFO     | tradr |   TP1: 0.57622
+2025-12-11 10:13:42 | INFO     | tradr |   TP5: 0.60864
+2025-12-11 10:13:42 | INFO     | tradr |   Lot Size: 0.09
+2025-12-11 10:13:42 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:43 | ERROR    | tradr | [CAD_CHF] Pending order FAILED: Order send returned None
+2025-12-11 10:13:43 | INFO     | tradr | [CHF_JPY] Scanning (OANDA: CHF_JPY, FTMO: CHFJPY)...
+2025-12-11 10:13:43 | INFO     | tradr | [CHF_JPY] BULLISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:43 | INFO     | tradr | [CHF_JPY] Entry too far: 191.62964 is 1.29R from current 195.64300 (max: 1.0R)
+2025-12-11 10:13:44 | INFO     | tradr | [XAU_USD] Scanning (OANDA: XAU_USD, FTMO: XAUUSD)...
+2025-12-11 10:13:44 | INFO     | tradr | [XAU_USD] BULLISH | Conf: 4/7 | Quality: 2 | Status: active
+2025-12-11 10:13:44 | INFO     | tradr | [XAU_USD] Entry too far: 3675.47510 is 1.52R from current 4284.24000 (max: 1.0
+)
+2025-12-11 10:13:44 | INFO     | tradr | [XAG_USD] Scanning (OANDA: XAG_USD, FTMO: XAGUSD)...
+2025-12-11 10:13:45 | INFO     | tradr | [XAG_USD] BULLISH | Conf: 3/7 | Quality: 1 | Status: active
+2025-12-11 10:13:45 | INFO     | tradr | [XAG_USD] Entry too far: 48.93500 is 3.41R from current 64.11400 (max: 1.0R)
+2025-12-11 10:13:45 | INFO     | tradr | [SPX500_USD] Scanning (OANDA: SPX500_USD, FTMO: US500.cash)...
+2025-12-11 10:13:45 | INFO     | tradr | [SPX500_USD] BULLISH | Conf: 4/7 | Quality: 2 | Status: active
+2025-12-11 10:13:45 | INFO     | tradr | [SPX500_USD] Entry too far: 6665.66740 is 1.15R from current 6891.63000 (max:
+.0R)
+2025-12-11 10:13:46 | INFO     | tradr | [NAS100_USD] Scanning (OANDA: NAS100_USD, FTMO: US100.cash)...
+2025-12-11 10:13:46 | INFO     | tradr | [NAS100_USD] BULLISH | Conf: 4/7 | Quality: 2 | Status: active
+2025-12-11 10:13:46 | INFO     | tradr | [NAS100_USD] Entry proximity OK: 0.76R from current price
+2025-12-11 10:13:46 | INFO     | tradr | [NAS100_USD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:46 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:46 | INFO     | tradr |   Confluence: 4/7
+2025-12-11 10:13:46 | INFO     | tradr |   Current Price: 25609.85000
+2025-12-11 10:13:46 | INFO     | tradr |   Entry: 24757.11900 (0.76R away)
+2025-12-11 10:13:46 | INFO     | tradr |   SL: 23631.56125 (1125.6 pips)
+2025-12-11 10:13:46 | INFO     | tradr |   TP1: 25432.45365 (0.6R)
+2025-12-11 10:13:46 | INFO     | tradr |   TP2: 26107.78831 (1.2R)
+2025-12-11 10:13:46 | INFO     | tradr |   TP3: 27008.23451 (2.0R)
+2025-12-11 10:13:46 | INFO     | tradr |   TP4: 27571.01339 (2.5R)
+2025-12-11 10:13:46 | INFO     | tradr |   TP5: 28696.57114 (3.5R)
+2025-12-11 10:13:46 | INFO     | tradr | [NAS100_USD] Risk calculation:
+2025-12-11 10:13:46 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:46 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:46 | INFO     | tradr |   Risk $: $1125557.75
+2025-12-11 10:13:46 | INFO     | tradr |   Stop pips: 11255577.5
+2025-12-11 10:13:46 | INFO     | tradr |   Lot size: 0.01
+2025-12-11 10:13:46 | INFO     | tradr | [NAS100_USD] Lot reduced to 0.01 to stay within cumulative risk limit
+2025-12-11 10:13:46 | WARNING  | tradr | [NAS100_USD] Would breach daily loss: simulated 11554.7% >= 5.0%
+2025-12-11 10:13:47 | INFO     | tradr | [BTC_USD] Scanning (OANDA: BTC_USD, FTMO: BTCUSD)...
+2025-12-11 10:13:47 | INFO     | tradr | [BTC_USD] BEARISH | Conf: 3/7 | Quality: 2 | Status: active
+2025-12-11 10:13:47 | INFO     | tradr | [BTC_USD] Entry proximity OK: 0.56R from current price
+2025-12-11 10:13:47 | INFO     | tradr | [BTC_USD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:47 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:47 | INFO     | tradr |   Confluence: 3/7
+2025-12-11 10:13:47 | INFO     | tradr |   Current Price: 90354.45000
+2025-12-11 10:13:47 | INFO     | tradr |   Entry: 97207.87414 (0.56R away)
+2025-12-11 10:13:47 | INFO     | tradr |   SL: 109365.01201 (12157.1 pips)
+2025-12-11 10:13:47 | INFO     | tradr |   TP1: 89913.59142 (0.6R)
+2025-12-11 10:13:47 | INFO     | tradr |   TP2: 82619.30870 (1.2R)
+2025-12-11 10:13:47 | INFO     | tradr |   TP3: 72893.59840 (2.0R)
+2025-12-11 10:13:47 | INFO     | tradr |   TP4: 66815.02947 (2.5R)
+2025-12-11 10:13:47 | INFO     | tradr |   TP5: 54657.89160 (3.5R)
+2025-12-11 10:13:47 | INFO     | tradr | [BTC_USD] Risk calculation:
+2025-12-11 10:13:47 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:47 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:47 | INFO     | tradr |   Risk $: $121.57
+2025-12-11 10:13:47 | INFO     | tradr |   Stop pips: 12157.1
+2025-12-11 10:13:47 | INFO     | tradr |   Lot size: 0.01
+2025-12-11 10:13:47 | INFO     | tradr | [BTC_USD] Price 0.56R from entry - using PENDING ORDER
+2025-12-11 10:13:47 | INFO     | tradr | [BTC_USD] Placing PENDING ORDER:
+2025-12-11 10:13:47 | INFO     | tradr |   Direction: BEARISH
+2025-12-11 10:13:47 | INFO     | tradr |   Entry Level: 97207.87414
+2025-12-11 10:13:47 | INFO     | tradr |   SL: 109365.01201
+2025-12-11 10:13:47 | INFO     | tradr |   TP1: 89913.59142
+2025-12-11 10:13:47 | INFO     | tradr |   TP5: 54657.89160
+2025-12-11 10:13:47 | INFO     | tradr |   Lot Size: 0.01
+2025-12-11 10:13:47 | INFO     | tradr |   Expiration: 24.0 hours
+2025-12-11 10:13:47 | ERROR    | tradr | [BTC_USD] Pending order FAILED: Order send returned None
+2025-12-11 10:13:47 | INFO     | tradr | [ETH_USD] Scanning (OANDA: ETH_USD, FTMO: ETHUSD)...
+2025-12-11 10:13:47 | INFO     | tradr | [ETH_USD] BULLISH | Conf: 5/7 | Quality: 3 | Status: active
+2025-12-11 10:13:47 | INFO     | tradr | [ETH_USD] Entry proximity OK: 0.37R from current price
+2025-12-11 10:13:47 | INFO     | tradr | [ETH_USD] ✓ ACTIVE SIGNAL VALIDATED!
+2025-12-11 10:13:47 | INFO     | tradr |   Direction: BULLISH
+2025-12-11 10:13:47 | INFO     | tradr |   Confluence: 5/7
+2025-12-11 10:13:47 | INFO     | tradr |   Current Price: 3197.84000
+2025-12-11 10:13:47 | INFO     | tradr |   Entry: 3016.15578 (0.37R away)
+2025-12-11 10:13:47 | INFO     | tradr |   SL: 2523.45260 (49270.3 pips)
+2025-12-11 10:13:47 | INFO     | tradr |   TP1: 3311.77769 (0.6R)
+2025-12-11 10:13:47 | INFO     | tradr |   TP2: 3607.39960 (1.2R)
+2025-12-11 10:13:47 | INFO     | tradr |   TP3: 4001.56215 (2.0R)
+2025-12-11 10:13:47 | INFO     | tradr |   TP4: 4247.91374 (2.5R)
+2025-12-11 10:13:47 | INFO     | tradr |   TP5: 4740.61692 (3.5R)
+2025-12-11 10:13:47 | INFO     | tradr | [ETH_USD] Risk calculation:
+2025-12-11 10:13:47 | INFO     | tradr |   Balance: $9738.99
+2025-12-11 10:13:47 | INFO     | tradr |   Risk %: 1.00% (daily loss: 0.0%, DD: 0.0%)
+2025-12-11 10:13:47 | INFO     | tradr |   Risk $: $98.54
+2025-12-11 10:13:47 | INFO     | tradr |   Stop pips: 49270.3
+2025-12-11 10:13:47 | INFO     | tradr |   Lot size: 0.2
+2025-12-11 10:13:47 | INFO     | tradr | [ETH_USD] Price at entry (0.37R) - using MARKET ORDER
+2025-12-11 10:13:47 | ERROR    | tradr | [ETH_USD] Market order FAILED: Order send returned None
+2025-12-11 10:13:48 | INFO     | tradr | ======================================================================
+2025-12-11 10:13:48 | INFO     | tradr | SCAN COMPLETE
+2025-12-11 10:13:48 | INFO     | tradr |   Symbols scanned: 34/34
+2025-12-11 10:13:48 | INFO     | tradr |   Active signals: 18
+2025-12-11 10:13:48 | INFO     | tradr |   Pending orders placed: 0
+2025-12-11 10:13:48 | INFO     | tradr |   Open positions: 1
+2025-12-11 10:13:48 | INFO     | tradr |   Pending orders: 0
+2025-12-11 10:13:48 | INFO     | tradr |   Tracked setups: 0
+2025-12-11 10:13:48 | INFO     | tradr |   Challenge Phase: 1
+2025-12-11 10:13:48 | INFO     | tradr |   Balance: $9,738.99
+2025-12-11 10:13:48 | INFO     | tradr |   Profit: -2.61% (Target: 10.0%)
+2025-12-11 10:13:48 | INFO     | tradr |   Daily DD: 0.00%/5%
+2025-12-11 10:13:48 | INFO     | tradr |   Max DD: 2.61%/10%
+2025-12-11 10:13:48 | INFO     | tradr |   Profitable Days: 5/0
+2025-12-11 10:13:48 | INFO     | tradr | ======================================================================
