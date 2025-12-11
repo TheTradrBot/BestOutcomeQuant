@@ -796,7 +796,7 @@ class LiveTradingBot:
                 direction=direction,
                 volume=lot_size,
                 sl=sl,
-                tp=tp1,
+                tp=0,  # No auto-TP - bot manages partial closes at TP1/TP2/TP3 manually
             )
             
             if not result.success:
@@ -855,7 +855,7 @@ class LiveTradingBot:
                 volume=lot_size,
                 entry_price=entry,
                 sl=sl,
-                tp=tp1,
+                tp=0,  # No auto-TP - bot manages partial closes at TP1/TP2/TP3 manually
                 expiration_hours=int(FTMO_CONFIG.pending_order_expiry_hours),
             )
             
