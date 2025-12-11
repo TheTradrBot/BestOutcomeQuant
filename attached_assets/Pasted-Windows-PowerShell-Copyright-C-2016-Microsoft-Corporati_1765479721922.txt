@@ -1,0 +1,30 @@
+Windows PowerShell
+Copyright (C) 2016 Microsoft Corporation. All rights reserved.
+
+PS C:\Users\Administrator> cd C:\mt5bot-new
+>> python main_live_bot.py
+[config] ✓ Loaded environment from C:\mt5bot-new\.env
+2025-12-11 11:01:24 | INFO     | tradr | Loaded 1 pending setups from file
+2025-12-11 11:01:24 | INFO     | tradr | Challenge already active (Phase 1) - continuing...
+2025-12-11 11:01:24 | INFO     | tradr | ======================================================================
+2025-12-11 11:01:24 | INFO     | tradr | TRADR BOT - LIVE TRADING (FTMO COMPLIANT)
+2025-12-11 11:01:24 | INFO     | tradr | *** CHALLENGE MODE: ELITE PROTECTION ENABLED ***
+2025-12-11 11:01:24 | INFO     | tradr | ======================================================================
+2025-12-11 11:01:24 | INFO     | tradr | Using SAME strategy as backtests (strategy_core.py)
+2025-12-11 11:01:24 | INFO     | tradr | FTMO Risk Limits:
+2025-12-11 11:01:24 | INFO     | tradr |   - Max single trade risk: 0.75% (Challenge Mode)
+2025-12-11 11:01:24 | INFO     | tradr |   - Max cumulative risk: 5.0%
+2025-12-11 11:01:24 | INFO     | tradr |   - Emergency close at: 4.5% daily loss / 8% drawdown
+2025-12-11 11:01:24 | INFO     | tradr |   - Partial TPs: 45% TP1, 30% TP2, 25% TP3 (Challenge Mode)
+2025-12-11 11:01:24 | INFO     | tradr | Server:
+2025-12-11 11:01:24 | INFO     | tradr | Login: 1512190437
+2025-12-11 11:01:24 | INFO     | tradr | Scan Interval: 4 hours
+2025-12-11 11:01:24 | INFO     | tradr | Validate Interval: 10 minutes
+2025-12-11 11:01:24 | INFO     | tradr | P/L Monitor Interval: 10 seconds (elite protection)
+2025-12-11 11:01:24 | INFO     | tradr | Strategy Mode: standard
+2025-12-11 11:01:24 | INFO     | tradr | Min Confluence: 3/7
+2025-12-11 11:01:24 | INFO     | tradr | Symbols: 34
+2025-12-11 11:01:24 | INFO     | tradr | ======================================================================
+2025-12-11 11:01:24 | INFO     | tradr | ======================================================================
+2025-12-11 11:01:24 | INFO     | tradr | CONNECTING TO MT5
+2025-12-11 11:01:24 | INFO     | tradr | ======================================================================
