@@ -126,7 +126,8 @@ class LiveTradingBot:
     """
     
     PENDING_SETUPS_FILE = "pending_setups.json"
-    VALIDATE_INTERVAL_MINUTES = 15
+    VALIDATE_INTERVAL_MINUTES = 10
+    MAIN_LOOP_INTERVAL_SECONDS = 10
     
     def __init__(self):
         self.mt5 = MT5Client(
@@ -1080,7 +1081,7 @@ class LiveTradingBot:
         for symbol in symbols_to_validate:
             try:
                 self.validate_setup(symbol)
-                time.sleep(0.5)
+                time.sleep(0.2)
             except Exception as e:
                 log.error(f"[{symbol}] Error validating setup: {e}")
         
@@ -1475,6 +1476,7 @@ class LiveTradingBot:
             except Exception as e:
                 log.error(f"[{symbol}] Error during scan: {e}")
                 continue
+            time.sleep(0.1)
         
         log.info("=" * 70)
         log.info("SCAN COMPLETE")
@@ -1534,7 +1536,7 @@ class LiveTradingBot:
         log.info(f"Login: {MT5_LOGIN}")
         log.info(f"Scan Interval: {SCAN_INTERVAL_HOURS} hours")
         log.info(f"Validate Interval: {self.VALIDATE_INTERVAL_MINUTES} minutes")
-        log.info(f"P/L Monitor Interval: 30 seconds (elite protection)")
+        log.info(f"P/L Monitor Interval: {self.MAIN_LOOP_INTERVAL_SECONDS} seconds (elite protection)")
         log.info(f"Strategy Mode: {SIGNAL_MODE}")
         log.info(f"Min Confluence: {MIN_CONFLUENCE}/7")
         log.info(f"Symbols: {len(TRADABLE_SYMBOLS)}")
@@ -1565,7 +1567,7 @@ class LiveTradingBot:
                 
                 if not emergency_triggered:
                     time_since_protection_check = (now - last_protection_check).total_seconds()
-                    if time_since_protection_check >= 30:
+                    if time_since_protection_check >= self.MAIN_LOOP_INTERVAL_SECONDS:
                         if CHALLENGE_MODE and self.challenge_manager:
                             if self.execute_protection_actions():
                                 emergency_triggered = True
@@ -1606,7 +1608,7 @@ class LiveTradingBot:
                         time.sleep(60)
                         continue
                 
-                time.sleep(30)
+                time.sleep(self.MAIN_LOOP_INTERVAL_SECONDS)
                 
             except KeyboardInterrupt:
                 break
