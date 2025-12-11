@@ -853,6 +853,7 @@ class LiveTradingBot:
         - Detect if pending orders were filled (position exists)
         - Detect if orders expired or were cancelled
         - Cancel orders if price moved past SL (setup invalidated)
+        - Delete pending orders older than 24 hours (time-based expiry)
         """
         if not self.pending_setups:
             return
@@ -864,10 +865,27 @@ class LiveTradingBot:
         pending_order_tickets = {o.ticket for o in my_pending_orders}
         
         setups_to_remove = []
+        now = datetime.now(timezone.utc)
+        expiry_hours = FTMO_CONFIG.pending_order_expiry_hours
         
         for symbol, setup in self.pending_setups.items():
             if setup.status != "pending":
                 continue
+            
+            if setup.created_at:
+                try:
+                    created_time = datetime.fromisoformat(setup.created_at.replace("Z", "+00:00"))
+                    age_hours = (now - created_time).total_seconds() / 3600
+                    
+                    if age_hours >= expiry_hours:
+                        log.info(f"[{symbol}] Pending order EXPIRED after {age_hours:.1f} hours (max {expiry_hours}h) - deleting")
+                        if setup.order_ticket:
+                            self.mt5.cancel_pending_order(setup.order_ticket)
+                        setup.status = "expired"
+                        setups_to_remove.append(symbol)
+                        continue
+                except (ValueError, TypeError) as e:
+                    log.warning(f"[{symbol}] Could not parse created_at: {setup.created_at} - {e}")
             
             if symbol in position_symbols:
                 log.info(f"[{symbol}] Pending order FILLED! Position now open")

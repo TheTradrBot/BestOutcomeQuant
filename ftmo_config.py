@@ -47,7 +47,7 @@ class FTMO10KConfig:
     immediate_entry_r: float = 0.4  # Execute immediately if within 0.4R
 
     # === PENDING ORDER SETTINGS ===
-    pending_order_expiry_hours: float = 6.0  # Expire pending orders after 6 hours
+    pending_order_expiry_hours: float = 24.0  # Expire pending orders after 24 hours
     pending_order_max_age_hours: float = 6.0  # Max age for pending orders (same as expiry)
 
     # === SL VALIDATION (ATR-based) ===
