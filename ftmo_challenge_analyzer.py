@@ -65,7 +65,7 @@ class BacktestTrade:
     tp3_price: Optional[float]
     tp4_price: Optional[float] = None
     tp5_price: Optional[float] = None
-    exit_date: datetime = None
+    exit_date: Optional[datetime] = None
     exit_price: float = 0.0
     tp1_hit: bool = False
     tp1_hit_date: Optional[datetime] = None
