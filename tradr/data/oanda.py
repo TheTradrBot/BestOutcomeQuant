@@ -89,13 +89,19 @@ class OandaClient:
         
         params = {
             "granularity": gran,
-            "count": min(count, 5000),
         }
         
-        if from_time:
+        if from_time and to_time:
             params["from"] = from_time.isoformat()
-        if to_time:
             params["to"] = to_time.isoformat()
+        elif from_time:
+            params["from"] = from_time.isoformat()
+            params["count"] = min(count, 5000)
+        elif to_time:
+            params["to"] = to_time.isoformat()
+            params["count"] = min(count, 5000)
+        else:
+            params["count"] = min(count, 5000)
         
         url = f"{self.base_url}/v3/instruments/{instrument}/candles"
         

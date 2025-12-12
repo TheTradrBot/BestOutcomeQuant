@@ -55,7 +55,7 @@ class FTMO10KConfig:
     max_sl_atr_ratio: float = 3.0  # Maximum SL = 3.0 * ATR
 
     # === CONFLUENCE SETTINGS ===
-    min_confluence_score: int = 2  # Start at 4/7, optimizer can adjust down if needed
+    min_confluence_score: int = 3  # Start at 4/7, optimizer can adjust down if needed
     min_quality_factors: int = 1  # Minimum 2 quality factors
 
     # === TAKE PROFIT SETTINGS ===
