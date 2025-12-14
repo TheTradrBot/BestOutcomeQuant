@@ -2,6 +2,18 @@
 .env
 .env.local
 
+# Replit specific
+.local/
+.cache/
+.pythonlibs/
+.upm/
+.config/
+*.replit
+.replit
+
+# Attached assets (development screenshots/pastes)
+attached_assets/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
