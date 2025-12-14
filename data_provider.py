@@ -94,6 +94,9 @@ def load_dukascopy_ohlcv(
     norm_symbol = normalize_symbol(symbol)
     norm_tf = TIMEFRAME_MAP.get(timeframe.upper(), timeframe.upper())
     
+    start_naive = start_date.replace(tzinfo=None) if start_date and start_date.tzinfo else start_date
+    end_naive = end_date.replace(tzinfo=None) if end_date and end_date.tzinfo else end_date
+    
     for year_range in ["2023_2024", "2024_2024", "2023_2023"]:
         csv_path = OHLCV_DIR / f"{norm_symbol}_{norm_tf}_{year_range}.csv"
         if csv_path.exists():
@@ -105,9 +108,16 @@ def load_dukascopy_ohlcv(
                     if isinstance(candle_time, str):
                         candle_time = pd.to_datetime(candle_time)
                     
-                    if start_date and candle_time < start_date:
+                    if hasattr(candle_time, 'tz') and candle_time.tz is not None:
+                        candle_time_naive = candle_time.replace(tzinfo=None)
+                    elif hasattr(candle_time, 'to_pydatetime'):
+                        candle_time_naive = candle_time.to_pydatetime().replace(tzinfo=None)
+                    else:
+                        candle_time_naive = candle_time
+                    
+                    if start_naive and candle_time_naive < start_naive:
                         continue
-                    if end_date and candle_time > end_date:
+                    if end_naive and candle_time_naive > end_naive:
                         continue
                     
                     candles.append({
@@ -120,7 +130,7 @@ def load_dukascopy_ohlcv(
                     })
                 
                 if candles:
-                    print(f"[DataProvider] Loaded {len(candles)} candles from Dukascopy cache for {norm_symbol} {norm_tf}")
+                    print(f"[DataProvider] Loaded {len(candles)} candles from cache for {norm_symbol} {norm_tf}")
                     return candles
             except Exception as e:
                 print(f"[DataProvider] Error loading {csv_path}: {e}")
