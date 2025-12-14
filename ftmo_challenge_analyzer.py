@@ -1754,7 +1754,6 @@ class PerformanceOptimizer:
         print(f"  Drawdown Failures: {patterns['dd_failures']}")
         print(f"  Daily Loss Failures: {patterns['daily_loss_failures']}")
         print(f"  Profit Target Failures: {patterns['profit_failures']}")
-        print(f"  Avg Win Profit: ${patterns['avg_win_profit']:.2f} (need ${self.MIN_PROFIT_PER_WIN}+)")
         print(f"  Low Win-Rate Assets: {len(patterns.get('low_winrate_assets', []))}")
         
         optimizations = self.determine_optimizations(patterns, iteration)
