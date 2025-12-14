@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Ultimate FTMO Challenge Performance Analyzer - Jan 2025 to Nov 2025
+Ultimate FTMO Challenge Performance Analyzer - 2024 Historical Data
 
 This module provides a comprehensive backtesting and self-optimizing system that:
-1. Backtests main_live_bot.py for the entire period Jan 2025 - Nov 2025
-2. Runs continuous FTMO challenges (Step 1 + Step 2 = 1 complete challenge)
-3. Tracks ALL trades with complete entry/exit data validated against OANDA
-4. Generates detailed CSV reports with all trade details
-5. Self-optimizes by MODIFYING main_live_bot.py parameters until achieving targets
-6. Target: Minimum 14 challenges passed, Maximum 2 failed
-7. Shows total earnings potential from a $200,000 account over 11 months
+1. Backtests main_live_bot.py using 2024 historical data
+2. Training Period: Jan-Sep 2024, Validation Period: Oct-Dec 2024
+3. Runs continuous FTMO challenges (Step 1 + Step 2 = 1 complete challenge)
+4. Tracks ALL trades with complete entry/exit data validated against OANDA
+5. Generates detailed CSV reports with all trade details
+6. Self-optimizes by MODIFYING main_live_bot.py parameters until achieving targets
+7. Target: Minimum 14 challenges passed, Maximum 2 failed
 """
 
 import json

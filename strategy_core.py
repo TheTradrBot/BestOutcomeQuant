@@ -11,7 +11,27 @@ faithful to the Blueprint confluence-based approach.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional, List, Dict, Tuple, Any
+
+
+def _is_weekend(candle: Dict) -> bool:
+    """Check if a candle falls on a weekend (Saturday=5, Sunday=6)."""
+    time_val = candle.get("time") or candle.get("timestamp") or candle.get("date")
+    if time_val is None:
+        return False
+    
+    try:
+        if isinstance(time_val, str):
+            dt = datetime.fromisoformat(time_val.replace("Z", "+00:00"))
+        elif isinstance(time_val, datetime):
+            dt = time_val
+        else:
+            return False
+        
+        return dt.weekday() >= 5  # 5=Saturday, 6=Sunday
+    except (ValueError, TypeError):
+        return False
 
 
 @dataclass
@@ -1181,6 +1201,10 @@ def simulate_trades(
         )
         
         if actual_entry_bar is None:
+            continue
+        
+        # Skip if entry candle is on a weekend (safety check)
+        if _is_weekend(candles[actual_entry_bar]):
             continue
         
         entry_bar = actual_entry_bar
