@@ -574,5 +574,65 @@
       "MIN_CONFLUENCE -> 2"
     ],
     "timestamp": "2025-12-14T22:40:15.641547"
+  },
+  {
+    "iteration": 1,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter1_20251214_225418.py",
+    "changes": [
+      "min_confluence_score -> 3",
+      "risk_per_trade_pct -> 0.7999999999999999",
+      "max_concurrent_trades -> 9",
+      "min_quality_factors -> 2"
+    ],
+    "timestamp": "2025-12-14T22:54:18.201860"
+  },
+  {
+    "iteration": 1,
+    "file": "strategy_core.py",
+    "backup": "ftmo_optimization_backups/strategy_core_iter1_20251214_225418.py",
+    "changes": [
+      "min_confluence -> 3",
+      "min_quality_factors -> 2"
+    ],
+    "timestamp": "2025-12-14T22:54:18.211912"
+  },
+  {
+    "iteration": 1,
+    "file": "main_live_bot.py",
+    "backup": "ftmo_optimization_backups/main_live_bot_iter1_20251214_225418.py",
+    "changes": [
+      "MIN_CONFLUENCE -> 3"
+    ],
+    "timestamp": "2025-12-14T22:54:18.218520"
+  },
+  {
+    "iteration": 2,
+    "file": "ftmo_config.py",
+    "backup": "ftmo_optimization_backups/ftmo_config_iter2_20251214_225439.py",
+    "changes": [
+      "min_confluence_score -> 2",
+      "min_quality_factors -> 1"
+    ],
+    "timestamp": "2025-12-14T22:54:39.096862"
+  },
+  {
+    "iteration": 2,
+    "file": "strategy_core.py",
+    "backup": "ftmo_optimization_backups/strategy_core_iter2_20251214_225439.py",
+    "changes": [
+      "min_confluence -> 2",
+      "min_quality_factors -> 1"
+    ],
+    "timestamp": "2025-12-14T22:54:39.106589"
+  },
+  {
+    "iteration": 2,
+    "file": "main_live_bot.py",
+    "backup": "ftmo_optimization_backups/main_live_bot_iter2_20251214_225439.py",
+    "changes": [
+      "MIN_CONFLUENCE -> 2"
+    ],
+    "timestamp": "2025-12-14T22:54:39.112666"
   }
 ]

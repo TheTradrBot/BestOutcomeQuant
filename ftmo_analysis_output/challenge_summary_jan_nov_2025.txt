@@ -5,32 +5,32 @@ FTMO CHALLENGE PERFORMANCE - JAN 2025 TO NOV 2025
 
 PERIOD: January 1, 2025 - November 30, 2025 (11 months)
 ACCOUNT SIZE: $200,000 (per challenge)
-TOTAL TRADES EXECUTED: 67
+TOTAL TRADES EXECUTED: 202
 
 CHALLENGE RESULTS:
 ------------------
-Challenges PASSED (Both Steps): 2
-Challenges FAILED: 1
-Success Rate: 66.7%
+Challenges PASSED (Both Steps): 5
+Challenges FAILED: 2
+Success Rate: 71.4%
 
 CHALLENGE DETAILS:
 ------------------
 
 TRADING STATISTICS:
 -------------------
-Total Trades: 67
-Winning Trades: 53
-Losing Trades: 14
-Win Rate: 79.1%
-Average R per Trade: +0.41R
-Best Trade: +2.6R (ETH_USD)
+Total Trades: 202
+Winning Trades: 161
+Losing Trades: 41
+Win Rate: 79.7%
+Average R per Trade: +0.48R
+Best Trade: +2.6R (BTC_USD)
 Worst Trade: -1.0R
 
 PROFITABILITY ANALYSIS:
 -----------------------
-Gross Profit: $+78,717.00
-Gross Loss: $-26,600.00
-Net Profit: $+52,117.00
+Gross Profit: $+263,378.00
+Gross Loss: $-77,900.00
+Net Profit: $+185,478.00
 
 EARNING POTENTIAL:
 ------------------
@@ -38,8 +38,8 @@ TOTAL FROM 0 PASSED CHALLENGES: $0.00
 
 SUCCESS CRITERIA CHECK:
 -----------------------
-Minimum 14 Challenges Passed: NO (2 passed, need 12 more)
-Maximum 2 Challenges Failed: YES (1 failed)
+Minimum 14 Challenges Passed: NO (5 passed, need 9 more)
+Maximum 2 Challenges Failed: YES (2 failed)
 
 *** CRITERIA NOT MET - OPTIMIZATION REQUIRED ***
 

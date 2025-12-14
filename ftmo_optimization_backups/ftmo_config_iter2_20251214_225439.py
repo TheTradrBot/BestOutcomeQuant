@@ -55,8 +55,8 @@ class FTMO200KConfig:
     max_sl_atr_ratio: float = 3.0  # Maximum SL = 3.0 * ATR
 
     # === CONFLUENCE SETTINGS ===
-    min_confluence_score: int = 2  # Optimized: 3/7 - matches winning config from optimizer
-    min_quality_factors: int = 1  # Minimum 1 quality factor
+    min_confluence_score: int = 3  # Optimized: 3/7 - matches winning config from optimizer
+    min_quality_factors: int = 2  # Minimum 1 quality factor
 
     # === TAKE PROFIT SETTINGS ===
     tp1_r_multiple: float = 1.5  # TP1 at 1.5R
