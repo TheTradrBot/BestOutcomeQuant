@@ -143,6 +143,9 @@ class StrategyParams:
     bollinger_period: int = 20
     bollinger_std: float = 2.0
     
+    # ML filter parameters
+    ml_min_prob: float = 0.6
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert parameters to dictionary."""
         return {
@@ -191,6 +194,7 @@ class StrategyParams:
             "use_mean_reversion": self.use_mean_reversion,
             "bollinger_period": self.bollinger_period,
             "bollinger_std": self.bollinger_std,
+            "ml_min_prob": self.ml_min_prob,
         }
     
     @classmethod
@@ -2344,6 +2348,14 @@ def simulate_trades(
                     entered_signal_ids.add(sig_id)
                     continue
                 
+                if params.ml_min_prob > 0:
+                    features = extract_ml_features(candles[:bar_idx+1], sig.flags, direction, params)
+                    if features:
+                        should_trade, prob = apply_ml_filter(features, params.ml_min_prob)
+                        if not should_trade:
+                            entered_signal_ids.add(sig_id)
+                            continue
+                
                 tp1_rr = (tp1 - entry_price) / risk if tp1 and direction == "bullish" else ((entry_price - tp1) / risk if tp1 else 0)
                 tp2_rr = (tp2 - entry_price) / risk if tp2 and direction == "bullish" else ((entry_price - tp2) / risk if tp2 else 0)
                 tp3_rr = (tp3 - entry_price) / risk if tp3 and direction == "bullish" else ((entry_price - tp3) / risk if tp3 else 0)
@@ -2431,3 +2443,173 @@ def get_conservative_params() -> StrategyParams:
         atr_tp4_multiplier=4.0,
         atr_tp5_multiplier=5.0,
     )
+
+
+def extract_ml_features(
+    candles: List[Dict],
+    flags: Dict[str, bool],
+    direction: str,
+    params: Optional[StrategyParams] = None,
+) -> Dict[str, float]:
+    """
+    Extract ML features for trade filtering.
+    
+    Args:
+        candles: List of OHLCV candle dictionaries
+        flags: Confluence flags from compute_confluence
+        direction: Trade direction ("bullish" or "bearish")
+        params: Strategy parameters
+    
+    Returns:
+        Dict with ML features for model input
+    """
+    if params is None:
+        params = StrategyParams()
+    
+    if not candles or len(candles) < 20:
+        return {}
+    
+    price = candles[-1].get("close", 0)
+    
+    z_score = _calculate_zscore(price, candles, period=20)
+    
+    closes = [c["close"] for c in candles[-params.bollinger_period:] if c.get("close")]
+    if len(closes) >= params.bollinger_period:
+        mean = sum(closes) / len(closes)
+        variance = sum((x - mean) ** 2 for x in closes) / len(closes)
+        std = variance ** 0.5
+        upper_band = mean + params.bollinger_std * std
+        lower_band = mean - params.bollinger_std * std
+        band_range = upper_band - lower_band
+        if band_range > 0:
+            bollinger_distance = (price - lower_band) / band_range
+        else:
+            bollinger_distance = 0.5
+    else:
+        bollinger_distance = 0.5
+    
+    rsi_value = _calculate_rsi(candles, params.rsi_period)
+    
+    _, atr_percentile = _calculate_atr_percentile(candles, period=14, lookback=100)
+    
+    momentum_lookback = params.momentum_lookback
+    if len(candles) >= momentum_lookback + 1:
+        current_close = candles[-1].get("close", 0)
+        past_close = candles[-(momentum_lookback + 1)].get("close", 1)
+        momentum_roc = ((current_close - past_close) / past_close * 100) if past_close > 0 else 0
+    else:
+        momentum_roc = 0
+    
+    features = {
+        "htf_aligned": 1 if flags.get("htf_aligned", False) else 0,
+        "location_ok": 1 if flags.get("location_ok", False) else 0,
+        "fib_ok": 1 if flags.get("fib_ok", False) else 0,
+        "structure_ok": 1 if flags.get("structure_ok", False) else 0,
+        "liquidity_ok": 1 if flags.get("liquidity_ok", False) else 0,
+        "confirmation_ok": 1 if flags.get("confirmation_ok", False) else 0,
+        "atr_regime_ok": 1 if flags.get("atr_regime_ok", False) else 0,
+        "z_score": z_score,
+        "bollinger_distance": bollinger_distance,
+        "rsi_value": rsi_value,
+        "atr_percentile": atr_percentile,
+        "momentum_roc": momentum_roc,
+        "direction_bullish": 1 if direction == "bullish" else 0,
+    }
+    
+    return features
+
+
+def _calculate_rsi(candles: List[Dict], period: int = 14) -> float:
+    """Calculate RSI value."""
+    if len(candles) < period + 1:
+        return 50.0
+    
+    closes = [c.get("close", 0) for c in candles[-(period + 1):]]
+    gains = []
+    losses = []
+    
+    for i in range(1, len(closes)):
+        change = closes[i] - closes[i - 1]
+        if change > 0:
+            gains.append(change)
+            losses.append(0)
+        else:
+            gains.append(0)
+            losses.append(abs(change))
+    
+    if not gains or not losses:
+        return 50.0
+    
+    avg_gain = sum(gains) / len(gains)
+    avg_loss = sum(losses) / len(losses)
+    
+    if avg_loss == 0:
+        return 100.0
+    
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+    
+    return rsi
+
+
+def apply_ml_filter(
+    features: Dict[str, float],
+    min_prob: float = 0.6,
+) -> Tuple[bool, float]:
+    """
+    Apply ML model to filter trades.
+    
+    Args:
+        features: Dict of features from extract_ml_features
+        min_prob: Minimum probability threshold for trade acceptance
+    
+    Returns:
+        Tuple of (should_trade, probability)
+    """
+    import os
+    
+    model_path = "models/best_rf.joblib"
+    
+    if not os.path.exists(model_path):
+        return (True, 1.0)
+    
+    try:
+        import joblib
+        model = joblib.load(model_path)
+        
+        feature_order = [
+            "htf_aligned", "location_ok", "fib_ok", "structure_ok",
+            "liquidity_ok", "confirmation_ok", "atr_regime_ok",
+            "z_score", "bollinger_distance", "rsi_value",
+            "atr_percentile", "momentum_roc", "direction_bullish"
+        ]
+        
+        feature_values = [[features.get(f, 0) for f in feature_order]]
+        
+        probas = model.predict_proba(feature_values)
+        prob_profitable = probas[0][1] if len(probas[0]) > 1 else probas[0][0]
+        
+        should_trade = prob_profitable >= min_prob
+        return (should_trade, float(prob_profitable))
+        
+    except Exception as e:
+        return (True, 1.0)
+
+
+def check_volatility_filter(
+    candles: List[Dict],
+    atr_min_percentile: float = 60.0,
+) -> Tuple[bool, float]:
+    """
+    Check if current volatility is above minimum threshold.
+    
+    Args:
+        candles: List of OHLCV candle dictionaries
+        atr_min_percentile: Minimum ATR percentile threshold
+    
+    Returns:
+        Tuple of (passes_filter, current_percentile)
+    """
+    _, atr_percentile = _calculate_atr_percentile(candles, period=14, lookback=100)
+    passes_filter = atr_percentile >= atr_min_percentile
+    return (passes_filter, atr_percentile)

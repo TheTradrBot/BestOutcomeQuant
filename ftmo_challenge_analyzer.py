@@ -32,6 +32,9 @@ from strategy_core import (
     _infer_trend,
     _pick_direction_from_bias,
     get_default_params,
+    extract_ml_features,
+    apply_ml_filter,
+    check_volatility_filter,
 )
 
 from data_provider import get_ohlcv as get_ohlcv_api
@@ -1980,6 +1983,223 @@ class PerformanceOptimizer:
         return score, breakdown
 
 
+class OptunaOptimizer:
+    """Optuna-based optimizer for FTMO strategy parameters with ML training."""
+    
+    def __init__(self, config: Optional[FTMO10KConfig] = None):
+        self.config = config if config else FTMO_CONFIG
+        self.best_params: Dict = {}
+        self.best_score: float = -float('inf')
+        self.trade_features: List[Dict] = []
+        self.trade_labels: List[int] = []
+    
+    def _objective(self, trial) -> float:
+        """Optuna objective function for hyperparameter optimization."""
+        params = {
+            'min_confluence_score': trial.suggest_int('min_confluence_score', 2, 6),
+            'min_quality_factors': trial.suggest_int('min_quality_factors', 1, 4),
+            'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.3, 0.6),
+            'bollinger_std': trial.suggest_float('bollinger_std', 1.8, 2.5),
+            'rsi_period': trial.suggest_int('rsi_period', 10, 20),
+            'atr_min_percentile': trial.suggest_float('atr_min_percentile', 40.0, 80.0),
+            'use_mean_reversion_filter': trial.suggest_categorical('use_mean_reversion_filter', [True, False]),
+            'use_rsi_divergence_filter': trial.suggest_categorical('use_rsi_divergence_filter', [True, False]),
+            'ml_min_prob': trial.suggest_float('ml_min_prob', 0.55, 0.75),
+        }
+        
+        trades = run_full_period_backtest(
+            start_date=TRAINING_START, end_date=TRAINING_END,
+            min_confluence=params['min_confluence_score'],
+            min_quality_factors=params['min_quality_factors'],
+            risk_per_trade_pct=params['risk_per_trade_pct'],
+            atr_min_percentile=params['atr_min_percentile'],
+            ml_min_prob=params['ml_min_prob'],
+            bollinger_std=params['bollinger_std'],
+            rsi_period=params['rsi_period'],
+            use_mean_reversion_filter=params['use_mean_reversion_filter'],
+            use_rsi_divergence_filter=params['use_rsi_divergence_filter'],
+        )
+        
+        if not trades or len(trades) < 10:
+            return -1000.0
+        
+        quarterly_r = {}
+        for q, (start, end) in QUARTERS_2024.items():
+            if start <= TRAINING_END:
+                q_trades = []
+                for t in trades:
+                    entry = getattr(t, 'entry_date', None)
+                    if entry:
+                        if isinstance(entry, str):
+                            try:
+                                entry = datetime.fromisoformat(entry.replace("Z", "+00:00"))
+                            except:
+                                continue
+                        if hasattr(entry, 'replace') and entry.tzinfo:
+                            entry = entry.replace(tzinfo=None)
+                        if start <= entry <= end:
+                            q_trades.append(t)
+                quarterly_r[q] = sum(getattr(t, 'rr', 0) for t in q_trades)
+        
+        if not quarterly_r:
+            return -500.0
+        
+        avg_quarterly_R = sum(quarterly_r.values()) / len(quarterly_r)
+        min_quarterly_R = min(quarterly_r.values())
+        min_quarterly_R_bonus = 10.0 if min_quarterly_R > 0 else 0.0
+        negative_quarter_penalty = sum(20.0 for r in quarterly_r.values() if r < 0)
+        
+        val_trades = run_full_period_backtest(
+            start_date=VALIDATION_START, end_date=VALIDATION_END,
+            min_confluence=params['min_confluence_score'],
+            min_quality_factors=params['min_quality_factors'],
+            risk_per_trade_pct=params['risk_per_trade_pct'],
+            atr_min_percentile=params['atr_min_percentile'],
+            ml_min_prob=params['ml_min_prob'],
+            bollinger_std=params['bollinger_std'],
+            rsi_period=params['rsi_period'],
+            use_mean_reversion_filter=params['use_mean_reversion_filter'],
+            use_rsi_divergence_filter=params['use_rsi_divergence_filter'],
+        )
+        validation_R = sum(getattr(t, 'rr', 0) for t in val_trades) if val_trades else 0
+        
+        monte_carlo_stability = 0.0
+        if len(trades) >= 20:
+            try:
+                mc = MonteCarloSimulator(trades, num_simulations=100)
+                mc_result = mc.run_simulation()
+                monte_carlo_stability = mc_result.get('mean_return', 0) * 0.1
+            except:
+                pass
+        
+        score = avg_quarterly_R + min_quarterly_R_bonus - negative_quarter_penalty + validation_R * 0.5 + monte_carlo_stability
+        
+        for trade in trades:
+            r_value = getattr(trade, 'rr', getattr(trade, 'r_multiple', 0))
+            label = 1 if r_value > 0 else 0
+            features = {
+                'htf_aligned': 1 if hasattr(trade, 'flags') and getattr(trade, 'flags', {}).get('htf_aligned', False) else 0,
+                'z_score': 0.0,
+                'atr_percentile': params['atr_min_percentile'],
+                'rsi_value': 50.0,
+                'bollinger_distance': 0.0,
+                'momentum_roc': 0.0,
+                'direction_bullish': 1 if trade.direction == 'bullish' else 0,
+            }
+            self.trade_features.append(features)
+            self.trade_labels.append(label)
+        
+        return score
+    
+    def run_optimization(self, n_trials: int = 100) -> Dict:
+        """Run Optuna optimization with specified number of trials."""
+        import optuna
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        
+        print(f"\n{'='*60}")
+        print(f"OPTUNA OPTIMIZATION - {n_trials} trials")
+        print(f"{'='*60}")
+        
+        study = optuna.create_study(direction='maximize', study_name='ftmo_optimization')
+        study.optimize(self._objective, n_trials=n_trials, show_progress_bar=True)
+        
+        self.best_params = study.best_params
+        self.best_score = study.best_value
+        
+        print(f"\nBest Score: {self.best_score:.2f}")
+        print(f"Best Parameters:")
+        for k, v in self.best_params.items():
+            print(f"  {k}: {v}")
+        
+        params_to_save = {
+            'min_confluence': self.best_params.get('min_confluence_score', 3),
+            'min_quality_factors': self.best_params.get('min_quality_factors', 2),
+            'risk_per_trade_pct': self.best_params.get('risk_per_trade_pct', 0.5),
+            'atr_min_percentile': self.best_params.get('atr_min_percentile', 60.0),
+            'ml_min_prob': self.best_params.get('ml_min_prob', 0.6),
+            'bollinger_std': self.best_params.get('bollinger_std', 2.0),
+            'rsi_period': self.best_params.get('rsi_period', 14),
+            'use_mean_reversion_filter': self.best_params.get('use_mean_reversion_filter', True),
+            'use_rsi_divergence_filter': self.best_params.get('use_rsi_divergence_filter', True),
+        }
+        
+        try:
+            save_optimized_params(params_to_save, backup=True)
+            print(f"Optimized parameters saved to params/current_params.json")
+        except Exception as e:
+            print(f"Failed to save params: {e}")
+        
+        final_trades = run_full_period_backtest(
+            start_date=TRAINING_START, end_date=TRAINING_END,
+            min_confluence=self.best_params.get('min_confluence_score', 3),
+            min_quality_factors=self.best_params.get('min_quality_factors', 2),
+            risk_per_trade_pct=self.best_params.get('risk_per_trade_pct', 0.5),
+            atr_min_percentile=self.best_params.get('atr_min_percentile', 60.0),
+            ml_min_prob=self.best_params.get('ml_min_prob', 0.6),
+            bollinger_std=self.best_params.get('bollinger_std', 2.0),
+            rsi_period=self.best_params.get('rsi_period', 14),
+            use_mean_reversion_filter=self.best_params.get('use_mean_reversion_filter', True),
+            use_rsi_divergence_filter=self.best_params.get('use_rsi_divergence_filter', True),
+        )
+        
+        if final_trades:
+            if self.trade_features and self.trade_labels:
+                self.train_ml_model(final_trades)
+            else:
+                print("No trade features collected during optimization - skipping ML training")
+        
+        return {'best_params': self.best_params, 'best_score': self.best_score, 'n_trials': n_trials}
+    
+    def train_ml_model(self, trades: List[Trade]) -> bool:
+        """Train ML model on trade features and save to models/best_rf.joblib."""
+        import os
+        os.makedirs('models', exist_ok=True)
+        
+        if len(trades) < 50:
+            print(f"Insufficient trades for ML training: {len(trades)} < 50")
+            return False
+        
+        features_list = []
+        labels = []
+        
+        for trade in trades:
+            r_value = getattr(trade, 'rr', getattr(trade, 'r_multiple', 0))
+            label = 1 if r_value > 0 else 0
+            
+            features = {
+                'htf_aligned': 1,
+                'location_ok': 1,
+                'fib_ok': 1,
+                'structure_ok': 1,
+                'liquidity_ok': 1,
+                'confirmation_ok': 1,
+                'atr_regime_ok': 1,
+                'z_score': 0.0,
+                'bollinger_distance': 0.5,
+                'rsi_value': 50.0,
+                'atr_percentile': 50.0,
+                'momentum_roc': 0.0,
+                'direction_bullish': 1 if trade.direction == 'bullish' else 0,
+            }
+            
+            features_list.append(list(features.values()))
+            labels.append(label)
+        
+        try:
+            from sklearn.ensemble import RandomForestClassifier
+            import joblib
+            
+            clf = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5, min_samples_leaf=10)
+            clf.fit(features_list, labels)
+            
+            joblib.dump(clf, 'models/best_rf.joblib')
+            print(f"ML model trained on {len(trades)} trades and saved to models/best_rf.joblib")
+            return True
+        except Exception as e:
+            print(f"ML training failed: {e}")
+            return False
+
+
 class ReportGenerator:
     """Generates all required reports and CSV files."""
     
@@ -2254,6 +2474,12 @@ def run_full_period_backtest(
     min_quality_factors: int = 1,
     risk_per_trade_pct: float = 0.5,
     excluded_assets: Optional[List[str]] = None,
+    atr_min_percentile: float = 60.0,
+    ml_min_prob: float = 0.6,
+    bollinger_std: float = 2.0,
+    rsi_period: int = 14,
+    use_mean_reversion_filter: bool = True,
+    use_rsi_divergence_filter: bool = True,
 ) -> List[Trade]:
     """
     Run backtest for the full Jan-Dec 2024 period.
@@ -2282,6 +2508,12 @@ def run_full_period_backtest(
     params.min_confluence = min_confluence
     params.min_quality_factors = min_quality_factors
     params.risk_per_trade_pct = risk_per_trade_pct
+    params.atr_min_percentile = atr_min_percentile
+    params.ml_min_prob = ml_min_prob
+    params.bollinger_std = bollinger_std
+    params.rsi_period = rsi_period
+    params.use_mean_reversion = use_mean_reversion_filter
+    params.use_rsi_divergence = use_rsi_divergence_filter
     
     for asset in assets:
         print(f"Processing {asset}...", end=" ")
