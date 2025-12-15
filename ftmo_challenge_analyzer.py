@@ -2091,7 +2091,7 @@ class OptunaOptimizer:
         
         return score
     
-    def run_optimization(self, n_trials: int = 100) -> Dict:
+    def run_optimization(self, n_trials: int = 50) -> Dict:
         """Run Optuna optimization with specified number of trials."""
         import optuna
         optuna.logging.set_verbosity(optuna.logging.WARNING)
