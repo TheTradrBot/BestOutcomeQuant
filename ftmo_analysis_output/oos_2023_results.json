@@ -1,0 +1,29 @@
+{
+  "period": "2023 Out-of-Sample",
+  "start_date": "2023-01-01",
+  "end_date": "2023-12-31",
+  "parameters_tested": {
+    "min_confluence": 6,
+    "min_quality_factors": 3,
+    "risk_per_trade_pct": 0.5
+  },
+  "results": {
+    "win_rate_pct": 49.5,
+    "total_r": -22.6,
+    "sharpe_like_ratio": -0.24,
+    "test_passed": false
+  },
+  "comparison_to_2024": {
+    "2024_win_rate_pct": 63.9,
+    "2024_total_r": 17.1,
+    "performance_gap_r": 39.7,
+    "regime_dependency": "HIGH"
+  },
+  "assessment": {
+    "robustness_score": 61.1,
+    "parameter_stability": "UNSTABLE",
+    "recommendation": "CAUTION - Strategy is regime-dependent, not suitable for live trading without additional validation"
+  },
+  "generated_at": "2025-12-15T02:45:00Z",
+  "generated_by": "ftmo_challenge_analyzer.py"
+}
