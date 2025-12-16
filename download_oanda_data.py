@@ -33,7 +33,7 @@ TIMEFRAMES = ["D", "H4", "W"]
 TF_MAP = {"D": "D1", "H4": "H4", "W": "W1"}
 
 START_YEAR = 2003
-END_YEAR = 2025
+END_YEAR = 2025  # Will use today's date if this is in the future
 
 
 def derive_monthly_from_daily(symbol: str) -> bool:
@@ -82,7 +82,8 @@ def main():
     print("=" * 70)
 
     start_date = datetime(START_YEAR, 1, 1, tzinfo=timezone.utc)
-    end_date = datetime(END_YEAR, 12, 31, tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    end_date = min(datetime(END_YEAR, 12, 31, tzinfo=timezone.utc), now)
 
     successful = 0
     skipped = 0
