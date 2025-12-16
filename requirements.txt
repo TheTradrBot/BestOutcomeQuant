@@ -31,3 +31,4 @@ scikit-learn
 flask
 scipy
 tabulate
+flask
