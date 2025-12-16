@@ -605,7 +605,10 @@ def run_full_period_backtest(
         ml_min_prob=ml_min_prob if ml_min_prob else 0.0,
     )
     
-    for symbol in assets:
+    total_assets = len(assets)
+    for idx, symbol in enumerate(assets):
+        if idx % 10 == 0:
+            print(f"  Processing asset {idx+1}/{total_assets}: {symbol}...", end="\r", flush=True)
         try:
             d1_candles = load_ohlcv_data(symbol, "D1", start_date - timedelta(days=100), end_date)
             h4_candles = load_ohlcv_data(symbol, "H4", start_date - timedelta(days=50), end_date)
