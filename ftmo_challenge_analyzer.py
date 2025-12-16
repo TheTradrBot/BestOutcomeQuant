@@ -1004,8 +1004,11 @@ class OptunaOptimizer:
         existing_trials = len(study.trials)
         if existing_trials > 0:
             print(f"Resuming from existing study with {existing_trials} completed trials")
-            if study.best_trial:
-                print(f"Current best value: {study.best_value:.0f}")
+            try:
+                if study.best_trial:
+                    print(f"Current best value: {study.best_value:.0f}")
+            except ValueError:
+                print("No valid completed trials yet")
         
         def progress_callback(study, trial):
             log_optimization_progress(
