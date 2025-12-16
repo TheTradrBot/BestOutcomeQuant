@@ -510,8 +510,10 @@ def load_ohlcv_data(symbol: str, timeframe: str, start_date: datetime, end_date:
                     break
             
             if date_col:
-                df[date_col] = pd.to_datetime(df[date_col])
-                df = df[(df[date_col] >= start_date) & (df[date_col] <= end_date)]
+                df[date_col] = pd.to_datetime(df[date_col], utc=True)
+                start_ts = pd.Timestamp(start_date, tz='UTC') if start_date.tzinfo is None else pd.Timestamp(start_date)
+                end_ts = pd.Timestamp(end_date, tz='UTC') if end_date.tzinfo is None else pd.Timestamp(end_date)
+                df = df[(df[date_col] >= start_ts) & (df[date_col] <= end_ts)]
             
             candles = []
             for _, row in df.iterrows():

@@ -198,8 +198,12 @@ def filter_by_year(df: pd.DataFrame, year: int) -> pd.DataFrame:
     Returns:
         Filtered DataFrame containing only rows from the specified year
     """
-    start_date = pd.Timestamp(f"{year}-01-01")
-    end_date = pd.Timestamp(f"{year}-12-31 23:59:59")
+    start_date = pd.Timestamp(f"{year}-01-01", tz='UTC')
+    end_date = pd.Timestamp(f"{year}-12-31 23:59:59", tz='UTC')
+    
+    if df.index.tz is None:
+        start_date = start_date.tz_localize(None)
+        end_date = end_date.tz_localize(None)
     
     return df[(df.index >= start_date) & (df.index <= end_date)]
 
@@ -221,16 +225,27 @@ def filter_by_date_range(
         Filtered DataFrame
     """
     mask = pd.Series([True] * len(df), index=df.index)
+    df_tz = df.index.tz
     
     if start_date is not None:
         if isinstance(start_date, str):
             start_date = pd.to_datetime(start_date)
-        mask &= df.index >= pd.Timestamp(start_date)
+        start_ts = pd.Timestamp(start_date)
+        if df_tz is not None and start_ts.tz is None:
+            start_ts = start_ts.tz_localize('UTC')
+        elif df_tz is None and start_ts.tz is not None:
+            start_ts = start_ts.tz_localize(None)
+        mask &= df.index >= start_ts
     
     if end_date is not None:
         if isinstance(end_date, str):
             end_date = pd.to_datetime(end_date)
-        mask &= df.index <= pd.Timestamp(end_date)
+        end_ts = pd.Timestamp(end_date)
+        if df_tz is not None and end_ts.tz is None:
+            end_ts = end_ts.tz_localize('UTC')
+        elif df_tz is None and end_ts.tz is not None:
+            end_ts = end_ts.tz_localize(None)
+        mask &= df.index <= end_ts
     
     return df[mask]
 
