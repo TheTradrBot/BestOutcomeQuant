@@ -519,17 +519,28 @@ def load_ohlcv_data(symbol: str, timeframe: str, start_date: datetime, end_date:
             if date_col:
                 df[date_col] = pd.to_datetime(df[date_col], utc=True)
             
-            candles = []
-            for _, row in df.iterrows():
-                candle = {
-                    "time": row.get(date_col) if date_col else None,
-                    "open": row.get("open") or row.get("Open"),
-                    "high": row.get("high") or row.get("High"),
-                    "low": row.get("low") or row.get("Low"),
-                    "close": row.get("close") or row.get("Close"),
-                    "volume": row.get("volume") or row.get("Volume") or 0,
-                }
-                candles.append(candle)
+            col_map = {}
+            for target, options in [
+                ('time', [date_col] if date_col else []),
+                ('open', ['open', 'Open']),
+                ('high', ['high', 'High']),
+                ('low', ['low', 'Low']),
+                ('close', ['close', 'Close']),
+                ('volume', ['volume', 'Volume']),
+            ]:
+                for opt in options:
+                    if opt and opt in df.columns:
+                        col_map[target] = opt
+                        break
+            
+            result_df = pd.DataFrame()
+            for target, source in col_map.items():
+                result_df[target] = df[source]
+            
+            if 'volume' not in result_df.columns:
+                result_df['volume'] = 0
+            
+            candles = result_df.to_dict('records')
             
             _DATA_CACHE[cache_key] = candles
         except Exception as e:
