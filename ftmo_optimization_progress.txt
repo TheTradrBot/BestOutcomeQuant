@@ -46,3 +46,10 @@
 [2025-12-17 17:34:24] Trial #41: value=62362, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
 [2025-12-17 17:41:54] Trial #42: value=32453, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
 [2025-12-17 17:43:31] Trial #43: value=91722, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
+[2025-12-17 17:45:15] Trial #44: value=73724, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
+[2025-12-17 17:46:54] Trial #45: value=60925, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
+[2025-12-17 17:48:36] Trial #46: value=78282, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
+[2025-12-17 17:50:43] Trial #47: value=41779, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
+[2025-12-17 17:52:26] Trial #48: value=86468, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
+[2025-12-17 17:54:08] Trial #49: value=91722, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
+[2025-12-17 17:55:53] Trial #50: value=91722, best_value=93008, params={"risk_per_trade_pct": 0.75, "min_confluence_score": 5, "min_quality_factors": 2, "atr_min_percentile": 70.0, "trail_activation_r": 2.6}
