@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List, Dict, Tuple, Any
 
+from indicators import bollinger_bands, calculate_adx_with_slope, check_di_crossover
+
 
 def _get_candle_datetime(candle: Dict) -> Optional[datetime]:
     """Extract datetime from candle dictionary."""
@@ -548,7 +550,8 @@ def calculate_adx(candles: List[Dict], period: int = 14) -> float:
 def detect_regime(
     daily_candles: List[Dict],
     adx_trend_threshold: float = 25.0,
-    adx_range_threshold: float = 20.0
+    adx_range_threshold: float = 20.0,
+    use_adx_slope_rising: bool = False
 ) -> Dict:
     """
     Detect market regime based on ADX (Average Directional Index).
@@ -572,10 +575,18 @@ def detect_regime(
        - NO ENTRIES ALLOWED - wait for regime confirmation
        - This prevents whipsaws during regime changes
     
+    V2 Enhancement: Early Trend Detection
+    When use_adx_slope_rising=True, allows Trend Mode entry even when ADX is
+    slightly below threshold if:
+    - ADX is rising (slope > 0)
+    - ADX is within 3 points of trend threshold
+    - There's a recent +DI/-DI crossover (trend direction confirmation)
+    
     Args:
         daily_candles: List of D1 OHLCV candle dictionaries
         adx_trend_threshold: ADX level for trend mode (default 25.0)
         adx_range_threshold: ADX level for range mode (default 20.0)
+        use_adx_slope_rising: Enable early trend detection via ADX slope (default False)
     
     Returns:
         Dict with keys:
@@ -583,6 +594,9 @@ def detect_regime(
             'adx': float - Current ADX value
             'can_trade': bool - Whether entries are allowed in this regime
             'description': str - Human-readable regime description
+            'adx_slope': float - ADX slope (only if use_adx_slope_rising=True)
+            'di_crossover': str - DI crossover info (only if use_adx_slope_rising=True)
+            'early_trend_entry': bool - True if triggered by early trend detection
     
     Note:
         - No look-ahead bias: uses only data up to current candle
@@ -590,27 +604,108 @@ def detect_regime(
     """
     adx = calculate_adx(daily_candles, period=14)
     
+    adx_slope = 0.0
+    di_crossover_info = ""
+    early_trend_entry = False
+    
+    if use_adx_slope_rising:
+        adx_with_slope, plus_di, minus_di, adx_slope, is_slope_rising = calculate_adx_with_slope(
+            daily_candles, period=14, slope_lookback=3
+        )
+        bullish_cross, bearish_cross, di_crossover_info = check_di_crossover(
+            daily_candles, period=14, lookback=3
+        )
+        has_di_crossover = bullish_cross or bearish_cross
+        
+        adx_near_threshold = adx >= (adx_trend_threshold - 3.0)
+        
+        if is_slope_rising and adx_near_threshold and has_di_crossover and adx < adx_trend_threshold:
+            early_trend_entry = True
+            return {
+                'mode': 'Trend',
+                'adx': adx,
+                'can_trade': True,
+                'description': f'Trend Mode (Early Entry): ADX={adx:.1f} rising with DI crossover, near threshold {adx_trend_threshold}',
+                'adx_slope': adx_slope,
+                'di_crossover': di_crossover_info,
+                'early_trend_entry': True,
+                'plus_di': plus_di,
+                'minus_di': minus_di
+            }
+    
     if adx >= adx_trend_threshold:
-        return {
+        result = {
             'mode': 'Trend',
             'adx': adx,
             'can_trade': True,
-            'description': f'Trend Mode: ADX={adx:.1f} >= {adx_trend_threshold} (momentum trading allowed)'
+            'description': f'Trend Mode: ADX={adx:.1f} >= {adx_trend_threshold} (momentum trading allowed)',
+            'early_trend_entry': False
         }
     elif adx < adx_range_threshold:
-        return {
+        result = {
             'mode': 'Range',
             'adx': adx,
             'can_trade': True,
-            'description': f'Range Mode: ADX={adx:.1f} < {adx_range_threshold} (conservative mean reversion only)'
+            'description': f'Range Mode: ADX={adx:.1f} < {adx_range_threshold} (conservative mean reversion only)',
+            'early_trend_entry': False
         }
     else:
-        return {
+        result = {
             'mode': 'Transition',
             'adx': adx,
             'can_trade': False,
-            'description': f'Transition Zone: ADX={adx:.1f} between {adx_range_threshold}-{adx_trend_threshold} (NO ENTRIES)'
+            'description': f'Transition Zone: ADX={adx:.1f} between {adx_range_threshold}-{adx_trend_threshold} (NO ENTRIES)',
+            'early_trend_entry': False
         }
+    
+    if use_adx_slope_rising:
+        result['adx_slope'] = adx_slope
+        result['di_crossover'] = di_crossover_info
+    
+    return result
+
+
+def check_trend_rsi_filter(
+    candles: List[Dict],
+    direction: str,
+    rsi_overbought: float = 80.0,
+    rsi_oversold: float = 20.0,
+    period: int = 14
+) -> Tuple[bool, str]:
+    """
+    Check if RSI would block a Trend Mode entry.
+    
+    This filter prevents trend entries when RSI is at extreme levels,
+    which could indicate exhaustion rather than continuation.
+    
+    Args:
+        candles: List of OHLCV candle dictionaries
+        direction: 'bullish' or 'bearish'
+        rsi_overbought: RSI threshold for overbought (default 80.0)
+        rsi_oversold: RSI threshold for oversold (default 20.0)
+        period: RSI calculation period (default 14)
+    
+    Returns:
+        Tuple of (should_block, reason)
+        - should_block: True if RSI indicates entry should be blocked
+        - reason: Explanation string
+        
+    Logic:
+        - For bullish entries: block if RSI > rsi_overbought (exhausted uptrend)
+        - For bearish entries: block if RSI < rsi_oversold (exhausted downtrend)
+    """
+    rsi = _calculate_rsi(candles, period=period)
+    
+    if direction == "bullish":
+        if rsi > rsi_overbought:
+            return True, f"RSI {rsi:.1f} > {rsi_overbought} (overbought - bullish entry blocked)"
+        else:
+            return False, f"RSI {rsi:.1f} <= {rsi_overbought} (bullish entry allowed)"
+    else:
+        if rsi < rsi_oversold:
+            return True, f"RSI {rsi:.1f} < {rsi_oversold} (oversold - bearish entry blocked)"
+        else:
+            return False, f"RSI {rsi:.1f} >= {rsi_oversold} (bearish entry allowed)"
 
 
 def _calculate_rsi(candles: List[Dict], period: int = 14) -> float:
@@ -788,6 +883,12 @@ def validate_range_mode_entry(
     confluence_score: int,
     params: Optional["StrategyParams"] = None,
     historical_sr: Optional[Dict[str, List[Dict]]] = None,
+    use_rsi_range: bool = True,
+    use_bollinger_range: bool = False,
+    bb_period_range: int = 20,
+    bb_std_range: float = 2.0,
+    rsi_period_range: int = 14,
+    atr_vol_ratio_range: float = 0.8,
 ) -> Tuple[bool, Dict[str, Any]]:
     """
     Validate entry for Range Mode (conservative mean reversion).
@@ -809,7 +910,7 @@ def validate_range_mode_entry(
        - Confirms price rejection at the level
        - Without rejection, no entry allowed
     
-    5. RSI Extremes
+    5. RSI Extremes (when use_rsi_range=True)
        - For longs: RSI < rsi_oversold (20-28)
        - For shorts: RSI > rsi_overbought (72-80)
        - Extreme readings increase mean reversion probability
@@ -818,6 +919,10 @@ def validate_range_mode_entry(
        - Current ATR(14) < atr_volatility_ratio * ATR(50) average
        - Low volatility = ranging market confirmation
        - High volatility = avoid (may break out)
+    
+    7. Bollinger Band Reversal (when use_bollinger_range=True)
+       - Price touched or went outside Bollinger Band
+       - Then reversed back inside (confirmation of mean reversion)
     
     Args:
         daily_candles: D1 OHLCV data
@@ -829,6 +934,12 @@ def validate_range_mode_entry(
         confluence_score: Pre-calculated confluence score
         params: StrategyParams with range mode thresholds
         historical_sr: Optional historical S/R levels
+        use_rsi_range: If True, require RSI extremes (default True)
+        use_bollinger_range: If True, require Bollinger Band reversal (default False)
+        bb_period_range: Bollinger Bands period (default 20)
+        bb_std_range: Bollinger Bands standard deviation (default 2.0)
+        rsi_period_range: RSI period for range mode (default 14)
+        atr_vol_ratio_range: ATR volatility ratio threshold (default 0.8)
     
     Returns:
         Tuple of (is_valid, details_dict)
@@ -847,6 +958,7 @@ def validate_range_mode_entry(
         'h4_rejection_check': {'passed': False, 'note': ''},
         'rsi_check': {'passed': False, 'note': ''},
         'atr_volatility_check': {'passed': False, 'note': ''},
+        'bollinger_check': {'passed': False, 'note': ''},
         'all_passed': False,
         'failed_checks': [],
     }
@@ -890,38 +1002,44 @@ def validate_range_mode_entry(
         details['h4_rejection_check'] = {'passed': False, 'note': rejection_note}
         details['failed_checks'].append('h4_rejection')
     
-    rsi = _calculate_rsi(daily_candles, period=14)
-    if direction == "bullish":
-        if rsi < params.rsi_oversold_range:
-            details['rsi_check'] = {
-                'passed': True,
-                'note': f'RSI {rsi:.1f} < {params.rsi_oversold_range} (oversold for longs)'
-            }
+    if use_rsi_range:
+        rsi = _calculate_rsi(daily_candles, period=rsi_period_range)
+        if direction == "bullish":
+            if rsi < params.rsi_oversold_range:
+                details['rsi_check'] = {
+                    'passed': True,
+                    'note': f'RSI({rsi_period_range}) {rsi:.1f} < {params.rsi_oversold_range} (oversold for longs)'
+                }
+            else:
+                details['rsi_check'] = {
+                    'passed': False,
+                    'note': f'RSI({rsi_period_range}) {rsi:.1f} >= {params.rsi_oversold_range} (not oversold)'
+                }
+                details['failed_checks'].append('rsi')
         else:
-            details['rsi_check'] = {
-                'passed': False,
-                'note': f'RSI {rsi:.1f} >= {params.rsi_oversold_range} (not oversold)'
-            }
-            details['failed_checks'].append('rsi')
+            if rsi > params.rsi_overbought_range:
+                details['rsi_check'] = {
+                    'passed': True,
+                    'note': f'RSI({rsi_period_range}) {rsi:.1f} > {params.rsi_overbought_range} (overbought for shorts)'
+                }
+            else:
+                details['rsi_check'] = {
+                    'passed': False,
+                    'note': f'RSI({rsi_period_range}) {rsi:.1f} <= {params.rsi_overbought_range} (not overbought)'
+                }
+                details['failed_checks'].append('rsi')
     else:
-        if rsi > params.rsi_overbought_range:
-            details['rsi_check'] = {
-                'passed': True,
-                'note': f'RSI {rsi:.1f} > {params.rsi_overbought_range} (overbought for shorts)'
-            }
-        else:
-            details['rsi_check'] = {
-                'passed': False,
-                'note': f'RSI {rsi:.1f} <= {params.rsi_overbought_range} (not overbought)'
-            }
-            details['failed_checks'].append('rsi')
+        details['rsi_check'] = {
+            'passed': True,
+            'note': 'RSI check skipped (use_rsi_range=False)'
+        }
     
     current_atr = _atr(daily_candles, period=14)
     long_atr = _atr(daily_candles, period=50) if len(daily_candles) >= 51 else current_atr
     
     if long_atr > 0:
         atr_ratio = current_atr / long_atr
-        threshold = params.atr_volatility_ratio
+        threshold = atr_vol_ratio_range
         
         if atr_ratio < threshold:
             details['atr_volatility_check'] = {
@@ -941,13 +1059,75 @@ def validate_range_mode_entry(
         }
         details['failed_checks'].append('atr_volatility')
     
+    if use_bollinger_range:
+        closes = [c.get("close", 0) for c in daily_candles]
+        if len(closes) >= bb_period_range + 2:
+            prev_closes = closes[:-1]
+            bb_result_prev = bollinger_bands(prev_closes, period=bb_period_range, std_mult=bb_std_range)
+            bb_result_curr = bollinger_bands(closes, period=bb_period_range, std_mult=bb_std_range)
+            
+            if bb_result_prev and bb_result_curr:
+                upper_prev, middle_prev, lower_prev = bb_result_prev
+                upper_curr, middle_curr, lower_curr = bb_result_curr
+                prev_close = closes[-2]
+                curr_close = closes[-1]
+                
+                if direction == "bullish":
+                    touched_lower_prev = prev_close <= lower_prev
+                    reversed_inside = curr_close > lower_curr
+                    
+                    if touched_lower_prev and reversed_inside:
+                        details['bollinger_check'] = {
+                            'passed': True,
+                            'note': f'BB Reversal: Price touched lower band ({prev_close:.5f} <= {lower_prev:.5f}) and reversed inside ({curr_close:.5f} > {lower_curr:.5f})'
+                        }
+                    else:
+                        details['bollinger_check'] = {
+                            'passed': False,
+                            'note': f'BB Reversal: No bullish reversal from lower band'
+                        }
+                        details['failed_checks'].append('bollinger')
+                else:
+                    touched_upper_prev = prev_close >= upper_prev
+                    reversed_inside = curr_close < upper_curr
+                    
+                    if touched_upper_prev and reversed_inside:
+                        details['bollinger_check'] = {
+                            'passed': True,
+                            'note': f'BB Reversal: Price touched upper band ({prev_close:.5f} >= {upper_prev:.5f}) and reversed inside ({curr_close:.5f} < {upper_curr:.5f})'
+                        }
+                    else:
+                        details['bollinger_check'] = {
+                            'passed': False,
+                            'note': f'BB Reversal: No bearish reversal from upper band'
+                        }
+                        details['failed_checks'].append('bollinger')
+            else:
+                details['bollinger_check'] = {
+                    'passed': False,
+                    'note': 'BB Reversal: Unable to calculate Bollinger Bands'
+                }
+                details['failed_checks'].append('bollinger')
+        else:
+            details['bollinger_check'] = {
+                'passed': False,
+                'note': f'BB Reversal: Insufficient data (need {bb_period_range + 2} candles)'
+            }
+            details['failed_checks'].append('bollinger')
+    else:
+        details['bollinger_check'] = {
+            'passed': True,
+            'note': 'Bollinger check skipped (use_bollinger_range=False)'
+        }
+    
     all_passed = (
         details['confluence_check']['passed'] and
         details['location_check']['passed'] and
         details['fib_786_check']['passed'] and
         details['h4_rejection_check']['passed'] and
         details['rsi_check']['passed'] and
-        details['atr_volatility_check']['passed']
+        details['atr_volatility_check']['passed'] and
+        details['bollinger_check']['passed']
     )
     
     details['all_passed'] = all_passed
