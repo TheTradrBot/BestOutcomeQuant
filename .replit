@@ -19,6 +19,7 @@ deploymentTarget = "cloudrun"
 expertMode = true
 
 [workflows]
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Live Trading Bot"
@@ -28,6 +29,26 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python live_bot.py"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Analyzer Status"
+
+[[workflows.workflow]]
+name = "Analyzer Status"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python ftmo_challenge_analyzer.py --status"
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[ports]]
 localPort = 5000
