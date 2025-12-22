@@ -2722,7 +2722,6 @@ def generate_signals(
         quality_factors = sum([
             flags.get("location", False),
             flags.get("fib", False),
-            flags.get("liquidity", False),
             flags.get("structure", False),
             flags.get("htf_bias", False),
         ])
