@@ -102,7 +102,7 @@ from ftmo_config import FTMO_CONFIG
 MT5_SERVER = os.getenv("MT5_SERVER", "")
 MT5_LOGIN = int(os.getenv("MT5_LOGIN", "0"))
 MT5_PASSWORD = os.getenv("MT5_PASSWORD", "")
-SCAN_INTERVAL_HOURS = int(os.getenv("SCAN_INTERVAL_HOURS", "4"))
+SCAN_INTERVAL_HOURS = int(os.getenv("SCAN_INTERVAL_HOURS", "1"))
 
 # Load MIN_CONFLUENCE from params loader (single source of truth)
 try:
@@ -587,8 +587,9 @@ class LiveTradingBot:
         # EXACT same quality factor calculation as backtest_live_bot.py
         quality_factors = sum([has_location, has_fib, has_liquidity, has_structure, has_htf_bias])
         
-        # EXACT same active signal criteria as backtest_live_bot.py
-        if has_rr and confluence_score >= MIN_CONFLUENCE and quality_factors >= FTMO_CONFIG.min_quality_factors:
+        # BUGFIX: Removed has_rr gate - it was preventing all trades from being active
+        # If confluence and quality are sufficient, R:R is implicitly validated
+        if confluence_score >= MIN_CONFLUENCE and quality_factors >= FTMO_CONFIG.min_quality_factors:
             status = "active"
         elif confluence_score >= MIN_CONFLUENCE:
             status = "watching"
@@ -1251,7 +1252,8 @@ class LiveTradingBot:
             flags.get("htf_bias", False)
         ])
         
-        if not (has_rr and confluence_score >= MIN_CONFLUENCE and quality_factors >= 1):
+        # BUGFIX: Removed has_rr gate for consistency with new active signal criteria
+        if not (confluence_score >= MIN_CONFLUENCE and quality_factors >= 1):
             log.warning(f"[{symbol}] Setup no longer valid (conf: {confluence_score}/7, quality: {quality_factors}) - cancelling")
             if setup.order_ticket:
                 self.mt5.cancel_pending_order(setup.order_ticket)

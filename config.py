@@ -134,6 +134,11 @@ FOREX_PAIRS = [
     "AUD_JPY", "AUD_CHF", "AUD_CAD", "AUD_NZD",
     "NZD_JPY", "NZD_CHF", "NZD_CAD",
     "CAD_JPY", "CAD_CHF", "CHF_JPY",
+    
+    # High volatility pairs (OPTIMIZED: Added for more setups daily)
+    "GBP_JPY",  # Yen crosses for volatility
+    "NZD_JPY",
+    "AUD_NZD",  # Commodity currency crosses
 ]
 
 # Metals (FTMO tradable)
@@ -145,13 +150,16 @@ METALS = [
 # Indices (FTMO tradable)
 INDICES = [
     "SPX500_USD",  # S&P 500 (US500 on FTMO)
-    "NAS100_USD",  # Nasdaq 100 (US100 on FTMO)
+    "NAS100_USD",  # Nasdaq 100 (US100 on FTMO) - High volatility
+    "UK100_USD",   # FTSE 100 (OPTIMIZED: Added for diversity)
 ]
 
 # Crypto (FTMO tradable)
 CRYPTO_ASSETS = [
-    "BTC_USD",   # Bitcoin (BTCUSD on FTMO)
-    "ETH_USD",   # Ethereum (ETHUSD on FTMO)
+    "BTC_USD",   # Bitcoin (BTCUSD on FTMO) - High volatility
+    "ETH_USD",   # Ethereum (ETHUSD on FTMO) - High volatility
+    "XRP_USD",   # Ripple (OPTIMIZED: Added for more entries)
+    "ADA_USD",   # Cardano (OPTIMIZED: Added for diversity)
 ]
 
 # Convenience groups

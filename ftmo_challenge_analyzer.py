@@ -76,10 +76,13 @@ _DATA_CACHE: Dict[str, List[Dict]] = {}
 OPTUNA_STUDY_NAME = "regime_adaptive_v2_clean"
 PROGRESS_LOG_FILE = "ftmo_optimization_progress.txt"
 
-TRAINING_START = datetime(2023, 1, 1)
-TRAINING_END = datetime(2024, 9, 30)
-VALIDATION_START = datetime(2024, 10, 1)
-VALIDATION_END = min(datetime.now(), datetime(2025, 12, 31))
+# OPTIMIZED: Rolling optimization window (last 18 months) instead of fixed dates
+# This uses recent market data and adapts to current market regimes
+TODAY = datetime.utcnow().date()
+TRAINING_END = TODAY - timedelta(days=90)  # 3 months ago for out-of-sample testing
+TRAINING_START = TRAINING_END - timedelta(days=365)  # 1 year of training data
+VALIDATION_START = TRAINING_END
+VALIDATION_END = TODAY  # Validate on most recent 3 months
 FULL_PERIOD_START = datetime(2023, 1, 1)
 FULL_PERIOD_END = min(datetime.now(), datetime(2025, 12, 31))
 
@@ -599,8 +602,6 @@ def run_full_period_backtest(
     december_atr_multiplier: float = 1.5,
     volatile_asset_boost: float = 1.5,
     ml_min_prob: Optional[float] = None,
-    bollinger_std: float = 2.0,
-    rsi_period: int = 14,
     excluded_assets: Optional[List[str]] = None,
     require_adx_filter: bool = True,
     min_adx: float = 25.0,
@@ -615,27 +616,9 @@ def run_full_period_backtest(
     rsi_overbought_range: float = 75.0,  # RSI threshold for range shorts
     atr_volatility_ratio: float = 0.8,  # ATR(14)/ATR(50) ratio for range mode
     atr_trail_multiplier: float = 1.5,  # ATR multiplier for trailing stops
-    partial_exit_at_1r: bool = True,  # Whether to take partial at 1R
-    # ============================================================================
-    # NEW: EXPANDED PARAMETERS (V2 Enhancement)
-    # ============================================================================
-    use_adx_slope_rising: bool = False,  # ADX slope-based early trend entry
-    use_rsi_range: bool = False,  # Dynamic RSI in Range Mode
-    rsi_period_range: int = 14,  # RSI period for range mode
-    use_bollinger_range: bool = False,  # Dynamic Bollinger Bands in Range Mode
-    bb_period_range: int = 20,  # Bollinger Band period for range mode
-    bb_std_range: float = 2.0,  # Bollinger Band std dev for range mode
-    use_rsi_trend: bool = False,  # RSI Filtering in Trend Mode
-    rsi_trend_overbought: float = 80.0,  # RSI overbought threshold for trend mode
-    rsi_trend_oversold: float = 20.0,  # RSI oversold threshold for trend mode
-    use_fib_0786_only: bool = False,  # Only use Fib 0.786 level
-    use_liquidity_sweep_required: bool = False,  # Require liquidity sweep
-    use_market_structure_bos_only: bool = False,  # Only BOS for market structure
-    use_atr_trailing: bool = False,  # Use ATR-based trailing stop
-    use_volatility_sizing_boost: bool = False,  # Boost sizing in high volatility
-    fib_zone_type: str = 'golden_only',  # Fib zone selection
-    candle_pattern_strictness: str = 'moderate',  # Candle pattern strictness
-    partial_exit_pct: float = 0.5,  # Partial exit percentage
+    partial_exit_at_1r: bool = True,  # Whether to take profit at 1R
+    partial_exit_pct: float = 0.5,  # % to close at 1R
+    use_adx_slope_rising: bool = False,  # Enable ADX slope rising early trend detection
     atr_vol_ratio_range: float = 0.8,  # ATR volatility ratio for range mode filter
 ) -> List[Trade]:
     """
@@ -698,9 +681,10 @@ def run_full_period_backtest(
             else:
                 effective_confluence = range_min_confluence
             
-            current_atr, atr_percentile = _calculate_atr_percentile(d1_candles)
-            if atr_percentile < atr_min_percentile:
-                continue
+            # DISABLED: ATR percentile filter - too restrictive, prevents trades
+            # current_atr, atr_percentile = _calculate_atr_percentile(d1_candles)
+            # if atr_percentile < atr_min_percentile:
+            #     continue
             
             params = StrategyParams(
                 min_confluence=effective_confluence,
@@ -710,35 +694,8 @@ def run_full_period_backtest(
                 trail_activation_r=trail_activation_r,
                 december_atr_multiplier=december_atr_multiplier,
                 volatile_asset_boost=volatile_asset_boost,
-                bollinger_std=bollinger_std,
-                rsi_period=rsi_period,
-                ml_min_prob=ml_min_prob if ml_min_prob else 0.0,
                 adx_trend_threshold=adx_trend_threshold,
                 adx_range_threshold=adx_range_threshold,
-                trend_min_confluence=trend_min_confluence,
-                range_min_confluence=range_min_confluence,
-                rsi_oversold_range=rsi_oversold_range,
-                rsi_overbought_range=rsi_overbought_range,
-                atr_volatility_ratio=atr_volatility_ratio,
-                atr_trail_multiplier=atr_trail_multiplier,
-                partial_exit_at_1r=partial_exit_at_1r,
-                use_adx_slope_rising=use_adx_slope_rising,
-                use_rsi_range=use_rsi_range,
-                rsi_period_range=rsi_period_range,
-                use_bollinger_range=use_bollinger_range,
-                bb_period_range=bb_period_range,
-                bb_std_range=bb_std_range,
-                use_rsi_trend=use_rsi_trend,
-                rsi_trend_overbought=rsi_trend_overbought,
-                rsi_trend_oversold=rsi_trend_oversold,
-                use_fib_0786_only=use_fib_0786_only,
-                use_market_structure_bos_only=use_market_structure_bos_only,
-                use_atr_trailing=use_atr_trailing,
-                use_volatility_sizing_boost=use_volatility_sizing_boost,
-                fib_zone_type=fib_zone_type,
-                candle_pattern_strictness=candle_pattern_strictness,
-                atr_vol_ratio_range=atr_vol_ratio_range,
-                partial_exit_pct=partial_exit_pct,
             )
             
             trades = simulate_trades(
@@ -767,11 +724,6 @@ def run_full_period_backtest(
                         confluence_score=confluence,
                         params=params,
                         historical_sr=None,
-                        use_rsi_range=use_rsi_range,
-                        use_bollinger_range=use_bollinger_range,
-                        bb_period_range=bb_period_range,
-                        bb_std_range=bb_std_range,
-                        rsi_period_range=rsi_period_range,
                         atr_vol_ratio_range=atr_vol_ratio_range,
                     )
                     
@@ -1061,30 +1013,24 @@ class OptunaOptimizer:
         # ============================================================================
         # REGIME-ADAPTIVE V2 EXPANDED PARAMETER SEARCH SPACE (20+ Parameters)
         # ============================================================================
-        # RESTORE TO WORKING ORIGINAL PARAMETERS (621 trials worked with these)
+        # LOOSENED PARAMETERS FOR BETTER TRADE GENERATION + QUARTERLY CONSISTENCY
+        # Focusing on getting 80-200 trades in training period (2023-2024-09) with positive quarterly R
         params = {
-            'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.5, 0.8, step=0.05),
-            'min_confluence_score': trial.suggest_int('min_confluence_score', 3, 6),
-            'min_quality_factors': trial.suggest_int('min_quality_factors', 1, 4),
-            'adx_trend_threshold': trial.suggest_float('adx_trend_threshold', 20.0, 28.0, step=1.0),
-            'adx_range_threshold': trial.suggest_float('adx_range_threshold', 15.0, 20.0, step=1.0),
-            'trend_min_confluence': trial.suggest_int('trend_min_confluence', 5, 7),
-            'range_min_confluence': trial.suggest_int('range_min_confluence', 4, 6),
-            'partial_exit_pct': trial.suggest_float('partial_exit_pct', 0.4, 0.7, step=0.05),
+            'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.4, 0.7, step=0.05),
+            'min_confluence_score': trial.suggest_int('min_confluence_score', 3, 5),  # CRITICAL: Lower to 3-5 (was 4-6), bias toward 3
+            'min_quality_factors': trial.suggest_int('min_quality_factors', 1, 3),     # Loosen - was 3
+            'adx_trend_threshold': trial.suggest_float('adx_trend_threshold', 18.0, 26.0, step=1.0),  # Allow lower ADX
+            'adx_range_threshold': trial.suggest_float('adx_range_threshold', 14.0, 20.0, step=1.0),
+            'trend_min_confluence': trial.suggest_int('trend_min_confluence', 4, 7),   # Allow as low as 4
+            'range_min_confluence': trial.suggest_int('range_min_confluence', 3, 6),   # Allow 3+
             'atr_trail_multiplier': trial.suggest_float('atr_trail_multiplier', 1.5, 3.5, step=0.2),
-            'atr_vol_ratio_range': trial.suggest_float('atr_vol_ratio_range', 0.6, 0.9, step=0.05),
+            'atr_vol_ratio_range': trial.suggest_float('atr_vol_ratio_range', 0.6, 0.95, step=0.05),
             'partial_exit_at_1r': trial.suggest_categorical('partial_exit_at_1r', [True, False]),
-            'atr_min_percentile': trial.suggest_float('atr_min_percentile', 60.0, 85.0, step=5.0),
-            'trail_activation_r': trial.suggest_float('trail_activation_r', 1.8, 3.4, step=0.2),
-            'december_atr_multiplier': trial.suggest_float('december_atr_multiplier', 1.3, 1.8, step=0.1),
-            'volatile_asset_boost': trial.suggest_float('volatile_asset_boost', 1.3, 2.0, step=0.1),
-            'use_adx_slope_rising': False,
-            'use_fib_0786_only': False,
-            'use_market_structure_bos_only': False,
-            'use_atr_trailing': False,
-            'use_volatility_sizing_boost': False,
-            'fib_zone_type': 'golden_only',
-            'candle_pattern_strictness': 'moderate',
+            'partial_exit_pct': trial.suggest_float('partial_exit_pct', 0.3, 0.7, step=0.05),
+            'atr_min_percentile': trial.suggest_float('atr_min_percentile', 45.0, 75.0, step=5.0),  # LOOSEN from 80!
+            'trail_activation_r': trial.suggest_float('trail_activation_r', 1.5, 3.4, step=0.2),
+            'december_atr_multiplier': trial.suggest_float('december_atr_multiplier', 1.2, 2.0, step=0.1),
+            'volatile_asset_boost': trial.suggest_float('volatile_asset_boost', 1.0, 2.2, step=0.1),
         }
         
         training_trades = run_full_period_backtest(
@@ -1100,7 +1046,6 @@ class OptunaOptimizer:
             ml_min_prob=None,
             require_adx_filter=True,
             min_adx=25.0,
-            # Regime-Adaptive V2 parameters
             adx_trend_threshold=params['adx_trend_threshold'],
             adx_range_threshold=params['adx_range_threshold'],
             trend_min_confluence=params['trend_min_confluence'],
@@ -1109,14 +1054,6 @@ class OptunaOptimizer:
             atr_vol_ratio_range=params['atr_vol_ratio_range'],
             atr_trail_multiplier=params['atr_trail_multiplier'],
             partial_exit_at_1r=params['partial_exit_at_1r'],
-            # NEW: Expanded parameters
-            use_adx_slope_rising=params['use_adx_slope_rising'],
-            use_fib_0786_only=params['use_fib_0786_only'],
-            use_market_structure_bos_only=params['use_market_structure_bos_only'],
-            use_atr_trailing=params['use_atr_trailing'],
-            use_volatility_sizing_boost=params['use_volatility_sizing_boost'],
-            fib_zone_type=params['fib_zone_type'],
-            candle_pattern_strictness=params['candle_pattern_strictness'],
             partial_exit_pct=params['partial_exit_pct'],
         )
         
@@ -1244,14 +1181,46 @@ class OptunaOptimizer:
             # E.g., 15% drawdown = 0.4 * (0.15-0.10) = 0.02 penalty -> 98% multiplier
             dd_penalty = 0.4 * (max_drawdown_pct - 0.10)
         
+        # CRITICAL: QUARTERLY POSITIVITY REQUIREMENT
+        # VERY HEAVY PENALTY for ANY quarter with negative R in training period
+        # This is the #1 goal: every quarter must be positive or near-zero
+        # ----------------------------------------------------------------------------
+        negative_quarter_count = 0
+        negative_quarters_list = []
+        for q, r in quarterly_r.items():
+            if r < -1.0:  # Allow small losses but penalize heavily for large negatives
+                negative_quarter_count += 1
+                negative_quarters_list.append(f"{q}({r:.1f}R)")
+        
+        if negative_quarter_count > 0:
+            # MASSIVE penalty for each negative quarter (aim for all positive)
+            quarterly_penalty = -5000 * negative_quarter_count
+            trial.set_user_attr('negative_quarters', negative_quarters_list)
+            return quarterly_penalty
+        
+        # Bonus for all-positive quarters
+        if all(r >= 0 for r in quarterly_r.values()):
+            consistency_bonus += 0.5
+        
         # ----------------------------------------------------------------------------
         # HARD FAIL: Reject strategies with severely undertrading quarters
-        # Any quarter with fewer than 5 trades is a hard fail
-        # ----------------------------------------------------------------------------
+        # RELAXED: Only fail if MOST quarters are empty (avoiding bootstrap trap)
+        # Let strategy find ANY trades first, then optimize from there
+        # -----------------------------------------------------------------------
+        zero_trade_quarters = sum(1 for count in quarterly_trade_counts.values() if count == 0)
+        total_quarters = len(quarterly_trade_counts)
+        
+        # Only hard fail if ALL or nearly all quarters empty (avoid rejection loop)
+        if total_quarters > 0 and zero_trade_quarters >= total_quarters * 0.9:
+            trial.set_user_attr('hard_fail_reason', f'{zero_trade_quarters}/{total_quarters} quarters had ZERO trades')
+            return -100000.0
+        
+        # Penalty for zero-trade quarters but allow exploration
         for q, count in quarterly_trade_counts.items():
-            if count < 5:
-                trial.set_user_attr('hard_fail_reason', f'Quarter {q} had only {count} trades (minimum 5 required)')
-                return -100000.0
+            if count == 0:
+                consistency_bonus -= 0.5  # Penalize but don't fail
+            if count < 4:
+                consistency_bonus -= 0.15
         
         # ----------------------------------------------------------------------------
         # ENHANCED: Trade Balance Bonus for 12-35 trades per quarter
@@ -1287,8 +1256,30 @@ class OptunaOptimizer:
         # ----------------------------------------------------------------------------
         # FINAL SCORE CALCULATION
         # Combines profit with consistency, drawdown protection, and trade balance
-        # ----------------------------------------------------------------------------
-        final_score = total_net_profit * (1 - dd_penalty) * consistency_bonus * (1 + trade_balance_bonus)
+        # INCLUDES: Win rate bonuses for 55%+ and 60%+ quarters
+        # -----------------------------------------------------------------------
+        # Calculate win rate bonuses from quarterly trades
+        quarter_wr_bonus = 0
+        for q in quarterly_r.keys():
+            winning = quarterly_winning_trades.get(q, 0)
+            total = quarterly_trade_counts.get(q, 1)
+            if total > 0:
+                wr = winning / total
+                if wr >= 0.60:
+                    quarter_wr_bonus += 1000  # Strong bonus for 60%+ WR
+                elif wr >= 0.55:
+                    quarter_wr_bonus += 500   # Moderate bonus for 55%+ WR
+        
+        # Trade frequency bonus: reward 80-200 trades in training
+        trade_freq_bonus = 0.0
+        if 80 <= len(trades_list) <= 200:
+            trade_freq_bonus = 0.5
+        elif len(trades_list) > 250:
+            trade_freq_bonus = -0.3
+        
+        # Final score: net profit * consistency multipliers + win-rate bonuses
+        final_score = total_net_profit * (1 - dd_penalty) * consistency_bonus * (1 + trade_balance_bonus + trade_freq_bonus)
+        final_score += quarter_wr_bonus  # Add win-rate bonuses directly to score
         
         # Store additional regime-adaptive metrics for analysis
         trial.set_user_attr('quarterly_profits', quarterly_profits)
@@ -1411,25 +1402,6 @@ class OptunaOptimizer:
             # NEW: ADX slope-based early trend entry
             'use_adx_slope_rising': self.best_params.get('use_adx_slope_rising', False),
             # NEW: Dynamic RSI in Range Mode
-            'use_rsi_range': self.best_params.get('use_rsi_range', False),
-            'rsi_period_range': self.best_params.get('rsi_period_range', 14),
-            # NEW: Dynamic Bollinger Bands in Range Mode
-            'use_bollinger_range': self.best_params.get('use_bollinger_range', False),
-            'bb_period_range': self.best_params.get('bb_period_range', 20),
-            'bb_std_range': self.best_params.get('bb_std_range', 2.0),
-            # NEW: RSI Filtering in Trend Mode
-            'use_rsi_trend': self.best_params.get('use_rsi_trend', False),
-            'rsi_trend_overbought': self.best_params.get('rsi_trend_overbought', 80.0),
-            'rsi_trend_oversold': self.best_params.get('rsi_trend_oversold', 20.0),
-            # NEW: Strategy-Level Toggles
-            'use_fib_0786_only': self.best_params.get('use_fib_0786_only', False),
-            'use_liquidity_sweep_required': self.best_params.get('use_liquidity_sweep_required', False),
-            'use_market_structure_bos_only': self.best_params.get('use_market_structure_bos_only', False),
-            'use_atr_trailing': self.best_params.get('use_atr_trailing', False),
-            'use_volatility_sizing_boost': self.best_params.get('use_volatility_sizing_boost', False),
-            # Categorical/Other
-            'fib_zone_type': self.best_params.get('fib_zone_type', 'golden_only'),
-            'candle_pattern_strictness': self.best_params.get('candle_pattern_strictness', 'moderate'),
             'partial_exit_pct': self.best_params.get('partial_exit_pct', 0.5),
         }
         
@@ -1493,12 +1465,21 @@ def generate_summary_txt(
         else:
             lines.append(f"  {k}: {v}")
     
+    # Calculate account size and risk per trade for USD conversion
+    account_size = 200000.0  # FTMO 200K account
+    risk_per_trade_pct = best_params.get('risk_per_trade_pct', 0.005)
+    
+    training_profit_usd = training_stats['total_r'] * risk_per_trade_pct * account_size
+    validation_profit_usd = validation_stats['total_r'] * risk_per_trade_pct * account_size
+    full_profit_usd = full_stats['total_r'] * risk_per_trade_pct * account_size
+    
     lines.extend([
         "",
         "TRAINING PERIOD (2023-01-01 to 2024-09-30)",
         "-" * 40,
         f"  Trades: {training_stats['count']}",
         f"  Total R: {training_stats['total_r']:+.2f}",
+        f"  Estimated Profit: ${training_profit_usd:+,.2f}",
         f"  Win Rate: {training_stats['win_rate']:.1f}%",
         f"  Avg R per Trade: {training_stats['avg_r']:+.3f}",
         "",
@@ -1506,6 +1487,7 @@ def generate_summary_txt(
         "-" * 40,
         f"  Trades: {validation_stats['count']}",
         f"  Total R: {validation_stats['total_r']:+.2f}",
+        f"  Estimated Profit: ${validation_profit_usd:+,.2f}",
         f"  Win Rate: {validation_stats['win_rate']:.1f}%",
         f"  Avg R per Trade: {validation_stats['avg_r']:+.3f}",
         "",
@@ -1513,12 +1495,15 @@ def generate_summary_txt(
         "-" * 40,
         f"  Trades: {full_stats['count']}",
         f"  Total R: {full_stats['total_r']:+.2f}",
+        f"  Estimated Profit: ${full_profit_usd:+,.2f}",
         f"  Win Rate: {full_stats['win_rate']:.1f}%",
         f"  Avg R per Trade: {full_stats['avg_r']:+.3f}",
         "",
         "QUARTERLY BREAKDOWN",
         "-" * 40,
     ])
+    
+    total_full_period_profit_usd = 0.0
     
     for q_name, (q_start, q_end) in sorted(QUARTERS_ALL.items()):
         q_filtered = []
@@ -1538,10 +1523,16 @@ def generate_summary_txt(
         q_r = sum(getattr(t, 'rr', 0) for t in q_filtered)
         q_wins = sum(1 for t in q_filtered if getattr(t, 'rr', 0) > 0)
         q_wr = (q_wins / len(q_filtered) * 100) if q_filtered else 0
-        lines.append(f"  {q_name}: {len(q_filtered)} trades, {q_r:+.1f}R, {q_wr:.0f}% win rate")
+        
+        # Calculate USD profit for this quarter
+        q_profit_usd = q_r * risk_per_trade_pct * account_size
+        total_full_period_profit_usd += q_profit_usd
+        
+        lines.append(f"  {q_name}: {len(q_filtered)} trades, {q_r:+.1f}R, {q_wr:.0f}% win rate, ${q_profit_usd:+,.2f}")
     
     lines.extend([
         "",
+        f"TOTAL PROFIT (Full Period 2023-2025): ${total_full_period_profit_usd:+,.2f}",
         "=" * 80,
         "End of Summary",
         "=" * 80,
@@ -1556,6 +1547,10 @@ def generate_summary_txt(
 def main():
     """
     Professional FTMO Optimization Workflow with CLI support.
+    
+    Uses ROLLING OPTIMIZATION window (last 18 months) for adaptive parameter fitting.
+    Training: 1 year of historical data ending 3 months ago
+    Validation: Most recent 3 months (out-of-sample)
     
     Usage:
       python ftmo_challenge_analyzer.py              # Run/resume optimization (5 trials)

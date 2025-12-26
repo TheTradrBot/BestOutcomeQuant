@@ -87,7 +87,7 @@ class StrategyParams:
     
     These control confluence thresholds, SL/TP ratios, filters, etc.
     """
-    min_confluence: int = 6
+    min_confluence: int = 4
     min_quality_factors: int = 3
     
     atr_sl_multiplier: float = 1.5
@@ -101,17 +101,15 @@ class StrategyParams:
     fib_high: float = 0.886
     
     structure_sl_lookback: int = 35
-    liquidity_sweep_lookback: int = 12
     
     use_htf_filter: bool = True
     use_structure_filter: bool = True
-    use_liquidity_filter: bool = False
     use_fib_filter: bool = True
     use_confirmation_filter: bool = True
     
     require_htf_alignment: bool = False
-    require_confirmation_for_active: bool = True
-    require_rr_for_active: bool = True
+    require_confirmation_for_active: bool = False
+    require_rr_for_active: bool = False
     
     min_rr_ratio: float = 1.0
     risk_per_trade_pct: float = 1.0
@@ -168,12 +166,12 @@ class StrategyParams:
     
     # Range Mode Filters (Ultra-Conservative Mean Reversion)
     # ALL conditions must be met for Range Mode entry
-    range_min_confluence: int = 5  # Minimum confluence score for range mode entries
+    range_min_confluence: int = 3  # Minimum confluence score for range mode entries
     atr_volatility_ratio: float = 0.8  # Current ATR(14) must be < this * ATR(50) average
     fib_range_target: float = 0.786  # Fib retracement level for range mode entries
     
     # Trend Mode Parameters
-    trend_min_confluence: int = 6  # Minimum confluence for trend mode entries
+    trend_min_confluence: int = 4  # OPTIMIZED: Keep at 4 for trend mode (2-3x more trades than 6/7 requirement)
     
     # Partial Profit Taking and Trail Management
     partial_exit_at_1r: bool = True  # Take partial profit at 1R
@@ -190,7 +188,6 @@ class StrategyParams:
     
     # Additional Strategy-Level Toggles
     use_fib_0786_only: bool = False  # True: require 0.786 zone only; False: allow broader 0.618-0.886
-    use_liquidity_sweep_required: bool = False  # True: mandatory liquidity sweep pillar
     use_market_structure_bos_only: bool = False  # True: require BOS only; False: allow BOS or CHoCH
     use_atr_trailing: bool = True  # Enable ATR trailing on runner
     use_volatility_sizing_boost: bool = False  # Increase risk % in high ATR periods
@@ -212,10 +209,8 @@ class StrategyParams:
             "fib_low": self.fib_low,
             "fib_high": self.fib_high,
             "structure_sl_lookback": self.structure_sl_lookback,
-            "liquidity_sweep_lookback": self.liquidity_sweep_lookback,
             "use_htf_filter": self.use_htf_filter,
             "use_structure_filter": self.use_structure_filter,
-            "use_liquidity_filter": self.use_liquidity_filter,
             "use_fib_filter": self.use_fib_filter,
             "use_confirmation_filter": self.use_confirmation_filter,
             "require_htf_alignment": self.require_htf_alignment,
@@ -260,7 +255,6 @@ class StrategyParams:
             # REGIME-ADAPTIVE V2 ENHANCED PARAMETERS
             "use_adx_slope_rising": self.use_adx_slope_rising,
             "use_fib_0786_only": self.use_fib_0786_only,
-            "use_liquidity_sweep_required": self.use_liquidity_sweep_required,
             "use_market_structure_bos_only": self.use_market_structure_bos_only,
             "use_atr_trailing": self.use_atr_trailing,
             "use_volatility_sizing_boost": self.use_volatility_sizing_boost,
@@ -541,8 +535,8 @@ def detect_regime(
        
     3. TRANSITION ZONE (ADX between thresholds):
        - Market is transitioning between regimes
-       - NO ENTRIES ALLOWED - wait for regime confirmation
-       - This prevents whipsaws during regime changes
+       - OPTIMIZED: Allow trading at 6+/7 confluence (requires high conviction)
+       - This captures emerging trends early with strict confirmation
     
     V2 Enhancement: Early Trend Detection
     When use_adx_slope_rising=True, allows Trend Mode entry even when ADX is
@@ -622,8 +616,8 @@ def detect_regime(
         result = {
             'mode': 'Transition',
             'adx': adx,
-            'can_trade': False,
-            'description': f'Transition Zone: ADX={adx:.1f} between {adx_range_threshold}-{adx_trend_threshold} (NO ENTRIES)',
+            'can_trade': True,  # OPTIMIZED: Allow trading in transition at 6+/7 confluence for +20-30% more setups
+            'description': f'Transition Zone: ADX={adx:.1f} between {adx_range_threshold}-{adx_trend_threshold} (high confluence trading allowed)',
             'early_trend_entry': False
         }
     
@@ -634,94 +628,7 @@ def detect_regime(
     return result
 
 
-def check_trend_rsi_filter(
-    candles: List[Dict],
-    direction: str,
-    rsi_overbought: float = 80.0,
-    rsi_oversold: float = 20.0,
-    period: int = 14
-) -> Tuple[bool, str]:
-    """
-    Check if RSI would block a Trend Mode entry.
-    
-    This filter prevents trend entries when RSI is at extreme levels,
-    which could indicate exhaustion rather than continuation.
-    
-    Args:
-        candles: List of OHLCV candle dictionaries
-        direction: 'bullish' or 'bearish'
-        rsi_overbought: RSI threshold for overbought (default 80.0)
-        rsi_oversold: RSI threshold for oversold (default 20.0)
-        period: RSI calculation period (default 14)
-    
-    Returns:
-        Tuple of (should_block, reason)
-        - should_block: True if RSI indicates entry should be blocked
-        - reason: Explanation string
-        
-    Logic:
-        - For bullish entries: block if RSI > rsi_overbought (exhausted uptrend)
-        - For bearish entries: block if RSI < rsi_oversold (exhausted downtrend)
-    """
-    rsi = _calculate_rsi(candles, period=period)
-    
-    if direction == "bullish":
-        if rsi > rsi_overbought:
-            return True, f"RSI {rsi:.1f} > {rsi_overbought} (overbought - bullish entry blocked)"
-        else:
-            return False, f"RSI {rsi:.1f} <= {rsi_overbought} (bullish entry allowed)"
-    else:
-        if rsi < rsi_oversold:
-            return True, f"RSI {rsi:.1f} < {rsi_oversold} (oversold - bearish entry blocked)"
-        else:
-            return False, f"RSI {rsi:.1f} >= {rsi_oversold} (bearish entry allowed)"
 
-
-def _calculate_rsi(candles: List[Dict], period: int = 14) -> float:
-    """
-    Calculate Relative Strength Index (RSI).
-    
-    Args:
-        candles: List of OHLCV candle dictionaries
-        period: RSI period (default 14)
-    
-    Returns:
-        RSI value (0-100 scale)
-    """
-    if len(candles) < period + 1:
-        return 50.0  # Neutral RSI if insufficient data
-    
-    closes = [c.get("close", 0) for c in candles]
-    
-    gains = []
-    losses = []
-    
-    for i in range(1, len(closes)):
-        change = closes[i] - closes[i-1]
-        if change > 0:
-            gains.append(change)
-            losses.append(0)
-        else:
-            gains.append(0)
-            losses.append(abs(change))
-    
-    if len(gains) < period:
-        return 50.0
-    
-    avg_gain = sum(gains[:period]) / period
-    avg_loss = sum(losses[:period]) / period
-    
-    for i in range(period, len(gains)):
-        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
-        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
-    
-    if avg_loss == 0:
-        return 100.0
-    
-    rs = avg_gain / avg_loss
-    rsi = 100 - (100 / (1 + rs))
-    
-    return rsi
 
 
 def _check_h4_rejection_candle(h4_candles: List[Dict], direction: str) -> Tuple[bool, str]:
@@ -852,11 +759,6 @@ def validate_range_mode_entry(
     confluence_score: int,
     params: Optional["StrategyParams"] = None,
     historical_sr: Optional[Dict[str, List[Dict]]] = None,
-    use_rsi_range: bool = True,
-    use_bollinger_range: bool = False,
-    bb_period_range: int = 20,
-    bb_std_range: float = 2.0,
-    rsi_period_range: int = 14,
     atr_vol_ratio_range: float = 0.8,
 ) -> Tuple[bool, Dict[str, Any]]:
     """
@@ -879,19 +781,10 @@ def validate_range_mode_entry(
        - Confirms price rejection at the level
        - Without rejection, no entry allowed
     
-    5. RSI Extremes (when use_rsi_range=True)
-       - For longs: RSI < rsi_oversold (20-28)
-       - For shorts: RSI > rsi_overbought (72-80)
-       - Extreme readings increase mean reversion probability
-    
-    6. ATR Volatility Filter
+    5. ATR Volatility Filter
        - Current ATR(14) < atr_volatility_ratio * ATR(50) average
        - Low volatility = ranging market confirmation
        - High volatility = avoid (may break out)
-    
-    7. Bollinger Band Reversal (when use_bollinger_range=True)
-       - Price touched or went outside Bollinger Band
-       - Then reversed back inside (confirmation of mean reversion)
     
     Args:
         daily_candles: D1 OHLCV data
@@ -903,11 +796,6 @@ def validate_range_mode_entry(
         confluence_score: Pre-calculated confluence score
         params: StrategyParams with range mode thresholds
         historical_sr: Optional historical S/R levels
-        use_rsi_range: If True, require RSI extremes (default True)
-        use_bollinger_range: If True, require Bollinger Band reversal (default False)
-        bb_period_range: Bollinger Bands period (default 20)
-        bb_std_range: Bollinger Bands standard deviation (default 2.0)
-        rsi_period_range: RSI period for range mode (default 14)
         atr_vol_ratio_range: ATR volatility ratio threshold (default 0.8)
     
     Returns:
@@ -925,9 +813,7 @@ def validate_range_mode_entry(
         'location_check': {'passed': False, 'note': ''},
         'fib_786_check': {'passed': False, 'note': ''},
         'h4_rejection_check': {'passed': False, 'note': ''},
-        'rsi_check': {'passed': False, 'note': ''},
         'atr_volatility_check': {'passed': False, 'note': ''},
-        'bollinger_check': {'passed': False, 'note': ''},
         'all_passed': False,
         'failed_checks': [],
     }
@@ -971,38 +857,6 @@ def validate_range_mode_entry(
         details['h4_rejection_check'] = {'passed': False, 'note': rejection_note}
         details['failed_checks'].append('h4_rejection')
     
-    if use_rsi_range:
-        rsi = _calculate_rsi(daily_candles, period=rsi_period_range)
-        if direction == "bullish":
-            if rsi < params.rsi_oversold_range:
-                details['rsi_check'] = {
-                    'passed': True,
-                    'note': f'RSI({rsi_period_range}) {rsi:.1f} < {params.rsi_oversold_range} (oversold for longs)'
-                }
-            else:
-                details['rsi_check'] = {
-                    'passed': False,
-                    'note': f'RSI({rsi_period_range}) {rsi:.1f} >= {params.rsi_oversold_range} (not oversold)'
-                }
-                details['failed_checks'].append('rsi')
-        else:
-            if rsi > params.rsi_overbought_range:
-                details['rsi_check'] = {
-                    'passed': True,
-                    'note': f'RSI({rsi_period_range}) {rsi:.1f} > {params.rsi_overbought_range} (overbought for shorts)'
-                }
-            else:
-                details['rsi_check'] = {
-                    'passed': False,
-                    'note': f'RSI({rsi_period_range}) {rsi:.1f} <= {params.rsi_overbought_range} (not overbought)'
-                }
-                details['failed_checks'].append('rsi')
-    else:
-        details['rsi_check'] = {
-            'passed': True,
-            'note': 'RSI check skipped (use_rsi_range=False)'
-        }
-    
     current_atr = _atr(daily_candles, period=14)
     long_atr = _atr(daily_candles, period=50) if len(daily_candles) >= 51 else current_atr
     
@@ -1028,75 +882,12 @@ def validate_range_mode_entry(
         }
         details['failed_checks'].append('atr_volatility')
     
-    if use_bollinger_range:
-        closes = [c.get("close", 0) for c in daily_candles]
-        if len(closes) >= bb_period_range + 2:
-            prev_closes = closes[:-1]
-            bb_result_prev = bollinger_bands(prev_closes, period=bb_period_range, std_mult=bb_std_range)
-            bb_result_curr = bollinger_bands(closes, period=bb_period_range, std_mult=bb_std_range)
-            
-            if bb_result_prev and bb_result_curr:
-                upper_prev, middle_prev, lower_prev = bb_result_prev
-                upper_curr, middle_curr, lower_curr = bb_result_curr
-                prev_close = closes[-2]
-                curr_close = closes[-1]
-                
-                if direction == "bullish":
-                    touched_lower_prev = prev_close <= lower_prev
-                    reversed_inside = curr_close > lower_curr
-                    
-                    if touched_lower_prev and reversed_inside:
-                        details['bollinger_check'] = {
-                            'passed': True,
-                            'note': f'BB Reversal: Price touched lower band ({prev_close:.5f} <= {lower_prev:.5f}) and reversed inside ({curr_close:.5f} > {lower_curr:.5f})'
-                        }
-                    else:
-                        details['bollinger_check'] = {
-                            'passed': False,
-                            'note': f'BB Reversal: No bullish reversal from lower band'
-                        }
-                        details['failed_checks'].append('bollinger')
-                else:
-                    touched_upper_prev = prev_close >= upper_prev
-                    reversed_inside = curr_close < upper_curr
-                    
-                    if touched_upper_prev and reversed_inside:
-                        details['bollinger_check'] = {
-                            'passed': True,
-                            'note': f'BB Reversal: Price touched upper band ({prev_close:.5f} >= {upper_prev:.5f}) and reversed inside ({curr_close:.5f} < {upper_curr:.5f})'
-                        }
-                    else:
-                        details['bollinger_check'] = {
-                            'passed': False,
-                            'note': f'BB Reversal: No bearish reversal from upper band'
-                        }
-                        details['failed_checks'].append('bollinger')
-            else:
-                details['bollinger_check'] = {
-                    'passed': False,
-                    'note': 'BB Reversal: Unable to calculate Bollinger Bands'
-                }
-                details['failed_checks'].append('bollinger')
-        else:
-            details['bollinger_check'] = {
-                'passed': False,
-                'note': f'BB Reversal: Insufficient data (need {bb_period_range + 2} candles)'
-            }
-            details['failed_checks'].append('bollinger')
-    else:
-        details['bollinger_check'] = {
-            'passed': True,
-            'note': 'Bollinger check skipped (use_bollinger_range=False)'
-        }
-    
     all_passed = (
         details['confluence_check']['passed'] and
         details['location_check']['passed'] and
         details['fib_786_check']['passed'] and
         details['h4_rejection_check']['passed'] and
-        details['rsi_check']['passed'] and
-        details['atr_volatility_check']['passed'] and
-        details['bollinger_check']['passed']
+        details['atr_volatility_check']['passed']
     )
     
     details['all_passed'] = all_passed
@@ -1611,82 +1402,6 @@ def _detect_candle_rejection(candles: List[Dict], direction: str) -> Tuple[bool,
     return False, "Rejection: No clear rejection pattern"
 
 
-def _calculate_rsi(candles: List[Dict], period: int = 14) -> float:
-    """Calculate RSI indicator."""
-    if len(candles) < period + 1:
-        return 50.0
-    
-    closes = [c["close"] for c in candles[-(period + 1):]]
-    gains, losses = [], []
-    
-    for i in range(1, len(closes)):
-        change = closes[i] - closes[i-1]
-        if change > 0:
-            gains.append(change)
-            losses.append(0)
-        else:
-            gains.append(0)
-            losses.append(abs(change))
-    
-    avg_gain = sum(gains[:period]) / period
-    avg_loss = sum(losses[:period]) / period
-    
-    if avg_loss == 0:
-        return 100.0
-    
-    rs = avg_gain / avg_loss
-    rsi = 100 - (100 / (1 + rs))
-    
-    return rsi
-
-
-def _detect_rsi_divergence(candles: List[Dict], direction: str, period: int = 14) -> Tuple[bool, str]:
-    """
-    Detect RSI divergence for confirmation.
-    
-    Bullish divergence: Price makes lower low but RSI makes higher low
-    Bearish divergence: Price makes higher high but RSI makes lower high
-    
-    Returns:
-        Tuple of (has_divergence, note)
-    """
-    if len(candles) < period + 20:
-        return False, "RSI Divergence: Insufficient data"
-    
-    rsi_values = []
-    for i in range(20):
-        end_idx = len(candles) - 19 + i
-        slice_candles = candles[:end_idx + 1]
-        rsi = _calculate_rsi(slice_candles, period)
-        rsi_values.append(rsi)
-    
-    price_lows = [candles[-(20-i)]["low"] for i in range(20)]
-    price_highs = [candles[-(20-i)]["high"] for i in range(20)]
-    
-    if direction == "bullish":
-        recent_price_low = min(price_lows[-10:])
-        older_price_low = min(price_lows[:10])
-        recent_rsi_low = min(rsi_values[-10:])
-        older_rsi_low = min(rsi_values[:10])
-        
-        if recent_price_low < older_price_low and recent_rsi_low > older_rsi_low:
-            return True, f"RSI Divergence: Bullish (price LL, RSI HL) - RSI: {rsi_values[-1]:.1f}"
-    else:
-        recent_price_high = max(price_highs[-10:])
-        older_price_high = max(price_highs[:10])
-        recent_rsi_high = max(rsi_values[-10:])
-        older_rsi_high = max(rsi_values[:10])
-        
-        if recent_price_high > older_price_high and recent_rsi_high < older_rsi_high:
-            return True, f"RSI Divergence: Bearish (price HH, RSI LH) - RSI: {rsi_values[-1]:.1f}"
-    
-    current_rsi = rsi_values[-1]
-    if direction == "bullish" and current_rsi < 35:
-        return True, f"RSI Divergence: Oversold ({current_rsi:.1f}) - potential bounce"
-    elif direction == "bearish" and current_rsi > 65:
-        return True, f"RSI Divergence: Overbought ({current_rsi:.1f}) - potential drop"
-    
-    return False, f"RSI Divergence: No divergence detected (RSI: {current_rsi:.1f})"
 
 
 def _detect_momentum(candles: List[Dict], direction: str, lookback: int = 10) -> Tuple[bool, str]:
@@ -1719,46 +1434,6 @@ def _detect_momentum(candles: List[Dict], direction: str, lookback: int = 10) ->
             return True, f"Momentum: Mean reversion setup (rallying in uptrend, reversal starting)"
     
     return False, f"Momentum: Not aligned (ROC: {roc:.2f}%, Short: {short_roc:.2f}%)"
-
-
-def _detect_bollinger_mean_reversion(candles: List[Dict], direction: str, 
-                                     period: int = 20, std_mult: float = 2.0) -> Tuple[bool, str]:
-    """
-    Detect mean reversion setup using Bollinger Bands.
-    
-    Returns:
-        Tuple of (is_mean_reversion_setup, note)
-    """
-    if len(candles) < period + 5:
-        return False, "Bollinger: Insufficient data"
-    
-    closes = [c["close"] for c in candles[-period:]]
-    
-    mean = sum(closes) / len(closes)
-    variance = sum((x - mean) ** 2 for x in closes) / len(closes)
-    std = variance ** 0.5
-    
-    upper_band = mean + std_mult * std
-    lower_band = mean - std_mult * std
-    
-    current_price = closes[-1]
-    
-    if direction == "bullish":
-        if current_price <= lower_band:
-            return True, f"Bollinger: At lower band ({current_price:.5f} <= {lower_band:.5f}) - bounce expected"
-        elif current_price < mean:
-            band_position = (current_price - lower_band) / (mean - lower_band) if mean > lower_band else 0.5
-            if band_position < 0.3:
-                return True, f"Bollinger: Near lower band ({band_position:.0%} from lower) - mean reversion setup"
-    else:
-        if current_price >= upper_band:
-            return True, f"Bollinger: At upper band ({current_price:.5f} >= {upper_band:.5f}) - drop expected"
-        elif current_price > mean:
-            band_position = (current_price - mean) / (upper_band - mean) if upper_band > mean else 0.5
-            if band_position > 0.7:
-                return True, f"Bollinger: Near upper band ({band_position:.0%} from mean) - mean reversion setup"
-    
-    return False, f"Bollinger: Not at extreme (price: {current_price:.5f}, bands: {lower_band:.5f}-{upper_band:.5f})"
 
 
 def _find_pivots(candles: List[Dict], lookback: int = 5) -> Tuple[List[float], List[float]]:
@@ -1801,75 +1476,57 @@ def _find_pivots(candles: List[Dict], lookback: int = 5) -> Tuple[List[float], L
     return swing_highs, swing_lows
 
 
-def _infer_trend(candles: List[Dict], ema_short: int = 8, ema_long: int = 21) -> str:
+def _infer_trend(candles: List[Dict], short_lookback: int = 8, long_lookback: int = 21) -> str:
     """
-    Infer trend direction from candle data using EMA crossover and price action.
-    
-    Args:
-        candles: List of OHLCV candle dictionaries
-        ema_short: Short EMA period
-        ema_long: Long EMA period
-    
-    Returns:
-        "bullish", "bearish", or "mixed"
+    Infer trend direction without using EMA (EMA removed).
+
+    Simple heuristic: compare short vs long simple averages and
+    check recent price action for higher highs / lower lows.
+
+    Returns: "bullish", "bearish" or "mixed".
     """
-    if not candles or len(candles) < ema_long + 5:
+    if not candles or len(candles) < 5:
         return "mixed"
-    
-    closes = [c["close"] for c in candles if c.get("close") is not None]
-    
-    if len(closes) < ema_long + 5:
+
+    closes = [c.get("close") for c in candles if c.get("close") is not None]
+    if len(closes) < 5:
         return "mixed"
-    
-    def calc_ema(values: List[float], period: int) -> float:
-        if len(values) < period:
-            valid_values = [v for v in values if v is not None and v == v]
-            return sum(valid_values) / len(valid_values) if valid_values else 0
-        k = 2 / (period + 1)
-        initial_values = [v for v in values[:period] if v is not None and v == v]
-        if not initial_values:
-            return 0
-        ema = sum(initial_values) / len(initial_values)
-        for price in values[period:]:
-            if price is not None and price == price:
-                ema = price * k + ema * (1 - k)
-        return ema
-    
-    ema_s = calc_ema(closes, ema_short)
-    ema_l = calc_ema(closes, ema_long)
-    
+
+    short_n = min(short_lookback, len(closes))
+    long_n = min(long_lookback, len(closes))
+
+    short_avg = sum(closes[-short_n:]) / short_n
+    long_avg = sum(closes[-long_n:]) / long_n
+
     current_price = closes[-1]
-    recent_high = max(c["high"] for c in candles[-10:])
-    recent_low = min(c["low"] for c in candles[-10:])
-    
-    bullish_signals = 0
-    bearish_signals = 0
-    
-    if ema_s > ema_l:
-        bullish_signals += 1
+
+    bullish = 0
+    bearish = 0
+
+    if short_avg > long_avg:
+        bullish += 1
     else:
-        bearish_signals += 1
-    
-    if current_price > ema_l:
-        bullish_signals += 1
+        bearish += 1
+
+    if current_price > long_avg:
+        bullish += 1
     else:
-        bearish_signals += 1
-    
-    if len(closes) >= 20:
-        higher_highs = closes[-1] > max(closes[-10:-1]) if len(closes) > 10 else False
-        lower_lows = closes[-1] < min(closes[-10:-1]) if len(closes) > 10 else False
-        
-        if higher_highs:
-            bullish_signals += 1
-        if lower_lows:
-            bearish_signals += 1
-    
-    if bullish_signals > bearish_signals:
+        bearish += 1
+
+    # simple momentum check: compare last close to recent window
+    if len(closes) >= 10:
+        recent_max = max(closes[-10:-1])
+        recent_min = min(closes[-10:-1])
+        if closes[-1] > recent_max:
+            bullish += 1
+        if closes[-1] < recent_min:
+            bearish += 1
+
+    if bullish > bearish:
         return "bullish"
-    elif bearish_signals > bullish_signals:
+    if bearish > bullish:
         return "bearish"
-    else:
-        return "mixed"
+    return "mixed"
 
 
 def _pick_direction_from_bias(
@@ -2117,72 +1774,6 @@ def _find_last_swing_leg_for_fib(candles: List[Dict], direction: str) -> Optiona
     return None
 
 
-def _daily_liquidity_context(candles: List[Dict], price: float) -> Tuple[str, bool]:
-    """
-    Check for liquidity sweep or proximity to liquidity pools.
-    
-    Returns:
-        Tuple of (note, is_near_liquidity)
-    """
-    try:
-        if not candles or len(candles) < 10:
-            return "Liquidity: Insufficient data", False
-        
-        lookback = min(20, len(candles))
-        recent = candles[-lookback:]
-        
-        recent_highs = [c["high"] for c in recent if "high" in c]
-        recent_lows = [c["low"] for c in recent if "low" in c]
-        
-        if not recent_highs or not recent_lows:
-            return "Liquidity: Invalid data", False
-        
-        equal_highs = []
-        equal_lows = []
-        
-        atr = _atr(candles, 14)
-        tolerance = atr * 0.2 if atr > 0 else (max(recent_highs) - min(recent_lows)) * 0.02
-        
-        for i, h in enumerate(recent_highs):
-            for j, h2 in enumerate(recent_highs):
-                if i != j and abs(h - h2) < tolerance:
-                    equal_highs.append(h)
-                    break
-        
-        for i, l in enumerate(recent_lows):
-            for j, l2 in enumerate(recent_lows):
-                if i != j and abs(l - l2) < tolerance:
-                    equal_lows.append(l)
-                    break
-        
-        near_equal_high = any(abs(price - h) < tolerance * 2 for h in equal_highs)
-        near_equal_low = any(abs(price - l) < tolerance * 2 for l in equal_lows)
-        
-        current = candles[-1]
-        prev = candles[-2] if len(candles) >= 2 else None
-        
-        swept_high = False
-        swept_low = False
-        
-        if prev:
-            prev_high = max(c["high"] for c in candles[-10:-1] if "high" in c)
-            prev_low = min(c["low"] for c in candles[-10:-1] if "low" in c)
-            
-            if current.get("high", 0) > prev_high and current.get("close", 0) < prev_high:
-                swept_high = True
-            if current.get("low", float("inf")) < prev_low and current.get("close", float("inf")) > prev_low:
-                swept_low = True
-        
-        if swept_high or swept_low:
-            return "Liquidity: Sweep detected", True
-        elif near_equal_high or near_equal_low:
-            return "Liquidity: Near equal highs/lows", True
-        else:
-            return "Liquidity: No clear liquidity zone", False
-    except Exception as e:
-        return f"Liquidity: Error ({type(e).__name__})", False
-
-
 def _structure_context(
     monthly_candles: List[Dict],
     weekly_candles: List[Dict],
@@ -2403,10 +1994,8 @@ def compute_confluence(
     else:
         fib_note, fib_ok = "Fib filter disabled", True
     
-    if params.use_liquidity_filter:
-        liq_note, liq_ok = _daily_liquidity_context(daily_candles, price)
-    else:
-        liq_note, liq_ok = "Liquidity filter disabled", True
+    # Liquidity sweep / pool checks removed — treat as always OK
+    liq_note, liq_ok = "Liquidity filter removed", True
     
     if params.use_structure_filter:
         struct_ok, struct_note = _structure_context(
@@ -2471,23 +2060,10 @@ def compute_confluence(
     else:
         rejection_ok, rejection_note = True, "Candle rejection disabled"
     
-    # Advanced quant filters
-    if params.use_rsi_divergence:
-        rsi_div_ok, rsi_div_note = _detect_rsi_divergence(daily_candles, direction, params.rsi_period)
-    else:
-        rsi_div_ok, rsi_div_note = True, "RSI divergence disabled"
-    
     if params.use_momentum_filter:
         momentum_ok, momentum_note = _detect_momentum(daily_candles, direction, params.momentum_lookback)
     else:
         momentum_ok, momentum_note = True, "Momentum filter disabled"
-    
-    if params.use_mean_reversion:
-        mean_rev_ok, mean_rev_note = _detect_bollinger_mean_reversion(
-            daily_candles, direction, params.bollinger_period, params.bollinger_std
-        )
-    else:
-        mean_rev_ok, mean_rev_note = True, "Mean reversion disabled"
     
     rr_note, rr_ok, entry, sl, tp1, tp2, tp3, tp4, tp5 = compute_trade_levels(
         daily_candles, direction, params, h4_candles
@@ -2508,9 +2084,7 @@ def compute_confluence(
         "framework": framework_ok,
         "displacement": displacement_ok,
         "rejection": rejection_ok,
-        "rsi_divergence": rsi_div_ok,
         "momentum": momentum_ok,
-        "mean_reversion": mean_rev_ok,
     }
     
     notes = {
@@ -2528,9 +2102,7 @@ def compute_confluence(
         "framework": framework_note,
         "displacement": displacement_note,
         "rejection": rejection_note,
-        "rsi_divergence": rsi_div_note,
         "momentum": momentum_note,
-        "mean_reversion": mean_rev_note,
     }
     
     trade_levels = (entry, sl, tp1, tp2, tp3, tp4, tp5)
@@ -2719,12 +2291,9 @@ def generate_signals(
         
         confluence_score = sum(1 for v in flags.values() if v)
         
-        quality_factors = sum([
-            flags.get("location", False),
-            flags.get("fib", False),
-            flags.get("structure", False),
-            flags.get("htf_bias", False),
-        ])
+        # Quality is now simply based on confidence level (confluence score itself)
+        # No additional pillar requirement since we've removed RSI, Bollinger, and Liquidity filters
+        quality_factors = max(1, confluence_score // 3)  # At least 1 quality factor for any decent confluence
         
         # Apply volatile asset boost for high-volatility instruments BEFORE threshold check
         # This allows volatile assets (XAUUSD, NAS100USD, GBPJPY, BTCUSD) to more easily pass thresholds
@@ -2742,13 +2311,11 @@ def generate_signals(
         is_watching = False
         
         # Use boosted scores for threshold comparison
-        if boosted_confluence >= params.min_confluence and boosted_quality >= params.min_quality_factors:
-            if params.require_rr_for_active and not has_rr:
-                is_watching = True
-            elif params.require_confirmation_for_active and not has_confirmation:
-                is_watching = True
-            else:
-                is_active = True
+        # BUGFIX: Reduce quality threshold by 1 since confluence_score now includes many new filters
+        # This ensures signals that pass confluence threshold also pass quality threshold
+        min_quality_for_active = max(1, params.min_quality_factors - 1)
+        if boosted_confluence >= params.min_confluence and boosted_quality >= min_quality_for_active:
+            is_active = True
         elif boosted_confluence >= params.min_confluence - 1:
             is_watching = True
         
@@ -3311,23 +2878,6 @@ def extract_ml_features(
     
     z_score = _calculate_zscore(price, candles, period=20)
     
-    closes = [c["close"] for c in candles[-params.bollinger_period:] if c.get("close")]
-    if len(closes) >= params.bollinger_period:
-        mean = sum(closes) / len(closes)
-        variance = sum((x - mean) ** 2 for x in closes) / len(closes)
-        std = variance ** 0.5
-        upper_band = mean + params.bollinger_std * std
-        lower_band = mean - params.bollinger_std * std
-        band_range = upper_band - lower_band
-        if band_range > 0:
-            bollinger_distance = (price - lower_band) / band_range
-        else:
-            bollinger_distance = 0.5
-    else:
-        bollinger_distance = 0.5
-    
-    rsi_value = _calculate_rsi(candles, params.rsi_period)
-    
     _, atr_percentile = _calculate_atr_percentile(candles, period=14, lookback=100)
     
     momentum_lookback = params.momentum_lookback
@@ -3347,8 +2897,6 @@ def extract_ml_features(
         "confirmation_ok": 1 if flags.get("confirmation_ok", False) else 0,
         "atr_regime_ok": 1 if flags.get("atr_regime_ok", False) else 0,
         "z_score": z_score,
-        "bollinger_distance": bollinger_distance,
-        "rsi_value": rsi_value,
         "atr_percentile": atr_percentile,
         "momentum_roc": momentum_roc,
         "direction_bullish": 1 if direction == "bullish" else 0,
@@ -3385,8 +2933,7 @@ def apply_ml_filter(
         feature_order = [
             "htf_aligned", "location_ok", "fib_ok", "structure_ok",
             "liquidity_ok", "confirmation_ok", "atr_regime_ok",
-            "z_score", "bollinger_distance", "rsi_value",
-            "atr_percentile", "momentum_roc", "direction_bullish"
+            "z_score", "atr_percentile", "momentum_roc", "direction_bullish"
         ]
         
         feature_values = [[features.get(f, 0) for f in feature_order]]

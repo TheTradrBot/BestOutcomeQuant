@@ -1,93 +1,14 @@
 # indicators.py
 """
 Technical indicators used by Blueprint Trader AI:
-- EMA
-- RSI
-- Bollinger Bands
 - ADX with slope detection
 """
 
 from typing import List, Optional, Tuple, Dict
 
 
-def ema(values: List[float], period: int) -> Optional[float]:
-    """
-    Return the latest EMA value for the given period.
-    values: oldest -> newest
-    """
-    if len(values) < period:
-        return None
+# EMA removed from indicators; trend inference now uses simple averages
 
-    k = 2 / (period + 1)
-    ema_val = sum(values[:period]) / period  # simple MA start
-    for price in values[period:]:
-        ema_val = price * k + ema_val * (1 - k)
-    return ema_val
-
-
-def rsi(values: List[float], period: int = 14) -> Optional[float]:
-    """
-    Classic RSI calculation, returns latest RSI.
-    values: oldest -> newest
-    """
-    if len(values) <= period:
-        return None
-
-    gains = []
-    losses = []
-    for i in range(1, len(values)):
-        diff = values[i] - values[i - 1]
-        if diff > 0:
-            gains.append(diff)
-            losses.append(0.0)
-        else:
-            gains.append(0.0)
-            losses.append(-diff)
-
-    # initial averages
-    avg_gain = sum(gains[:period]) / period
-    avg_loss = sum(losses[:period]) / period
-
-    for i in range(period, len(gains)):
-        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
-        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
-
-    if avg_loss == 0:
-        return 100.0
-
-    rs = avg_gain / avg_loss
-    return 100 - (100 / (1 + rs))
-
-
-def bollinger_bands(
-    values: List[float],
-    period: int = 20,
-    std_mult: float = 2.0
-) -> Optional[Tuple[float, float, float]]:
-    """
-    Calculate Bollinger Bands (upper, middle, lower).
-    
-    Args:
-        values: List of prices (oldest -> newest)
-        period: Moving average period (default 20)
-        std_mult: Standard deviation multiplier (default 2.0)
-    
-    Returns:
-        Tuple of (upper_band, middle_band, lower_band) or None if insufficient data
-    """
-    if len(values) < period:
-        return None
-    
-    recent = values[-period:]
-    middle = sum(recent) / period
-    
-    variance = sum((x - middle) ** 2 for x in recent) / period
-    std = variance ** 0.5
-    
-    upper = middle + std_mult * std
-    lower = middle - std_mult * std
-    
-    return (upper, middle, lower)
 
 
 def calculate_adx_with_slope(

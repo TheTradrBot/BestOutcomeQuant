@@ -31,7 +31,7 @@ from strategy_core import (
     _h4_confirmation as h4_confirmation,
     _location_context as location_context,
     _fib_context as fib_context,
-    _daily_liquidity_context as liquidity_context,
+    # Liquidity sweep removed; keep compatibility but do not export
     _structure_context as structure_context,
 )
 
@@ -54,6 +54,6 @@ __all__ = [
     "h4_confirmation",
     "location_context",
     "fib_context",
-    "liquidity_context",
+    # "liquidity_context",
     "structure_context",
 ]

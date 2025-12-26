@@ -1,5 +1,5 @@
 {
-  "min_confluence": 5,
+  "min_confluence": 6,
   "min_quality_factors": 3,
   "risk_per_trade_pct": 0.5,
   "atr_min_percentile": 70.0,
@@ -17,7 +17,7 @@
   "partial_exit_at_1r": true,
   "use_adx_slope_rising": false,
   "partial_exit_pct": 0.7,
-  "generated_at": "2025-12-26T10:43:07.864925Z",
+  "generated_at": "2025-12-26T10:42:31.494537Z",
   "generated_by": "ftmo_challenge_analyzer.py",
   "version": "1.0.0"
 }

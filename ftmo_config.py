@@ -30,8 +30,8 @@ class FTMO200KConfig:
     total_dd_emergency_pct: float = 7.0  # Emergency mode at 7% total DD
 
     # === POSITION SIZING (Match /backtest command) ===
-    risk_per_trade_pct: float = 0.5  # Match /backtest command (1% = $2000 per trade on 200K)
-    max_risk_aggressive_pct: float = 1.0  # Aggressive mode: 1%
+    risk_per_trade_pct: float = 1.0  # OPTIMIZED: Increased from 0.5% to 1.0% for challenge completion (1% = $2000 per trade on 200K)
+    max_risk_aggressive_pct: float = 1.5  # Aggressive mode: 1.5%
     max_risk_normal_pct: float = 0.75  # Normal mode: 0.75%
     max_risk_conservative_pct: float = 0.5  # Conservative mode: 0.5%
     max_cumulative_risk_pct: float = 5.0  # Max total risk across all positions
@@ -55,8 +55,8 @@ class FTMO200KConfig:
     max_sl_atr_ratio: float = 3.0  # Maximum SL = 3.0 * ATR
 
     # === CONFLUENCE SETTINGS ===
-    min_confluence_score: int = 6  # Optimized: 3/7 - matches winning config from optimizer
-    min_quality_factors: int = 3  # Minimum 1 quality factor
+    min_confluence_score: int = 4  # OPTIMIZED: Lowered from 6 to 4 for 2-3x more trade opportunities (allows 4/7 setups)
+    min_quality_factors: int = 2  # OPTIMIZED: Lowered from 3 to 2 for easier entry triggers
 
     # === TAKE PROFIT SETTINGS ===
     tp1_r_multiple: float = 1.5  # TP1 at 1.5R
@@ -66,11 +66,11 @@ class FTMO200KConfig:
     tp5_r_multiple: float = 10.0  # TP5 at 10.0R
 
     # === PARTIAL CLOSE PERCENTAGES ===
-    tp1_close_pct: float = 0.25  # Close 25% at TP1
-    tp2_close_pct: float = 0.25  # Close 25% at TP2
-    tp3_close_pct: float = 0.20  # Close 20% at TP3
-    tp4_close_pct: float = 0.15  # Close 15% at TP4
-    tp5_close_pct: float = 0.15  # Close 15% at TP5
+    tp1_close_pct: float = 0.10  # OPTIMIZED: Lowered from 25% to 10% - keep 90% running (catch bigger moves)
+    tp2_close_pct: float = 0.10  # OPTIMIZED: Lowered from 25% to 10% - keep 80% running by TP2
+    tp3_close_pct: float = 0.15  # OPTIMIZED: Reduced from 20% to 15% - keep 65% running to TP4+
+    tp4_close_pct: float = 0.30  # INCREASED from 15% to 30% - TP4 is major profit level
+    tp5_close_pct: float = 0.35  # INCREASED from 15% to 35% - trail final 35% for maximum runners
 
     # === TRAILING STOP SETTINGS (Moderate Progressive) ===
     trail_after_tp1: bool = True  # Move SL to breakeven after TP1

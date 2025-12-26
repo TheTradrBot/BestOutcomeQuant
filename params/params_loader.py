@@ -132,7 +132,7 @@ def get_transaction_costs(symbol: str) -> Tuple[float, float, float]:
     
     spread_config = costs.get("spread_pips", {})
     spread = spread_config.get(normalized, spread_config.get("default", 2.5))
-    slippage = costs.get("slippage_pips", 1.0)
+    slippage = costs.get("slippage_pips", 5.0)  # OPTIMIZED: Increased from 1.0 to 5.0 pips for realistic execution
     commission = costs.get("commission_per_lot", 7.0)
     
     return spread, slippage, commission
