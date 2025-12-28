@@ -1,7 +1,7 @@
 {
   "optimization_mode": "TPE",
-  "timestamp": "2025-12-28 22:41:12",
-  "best_score": -16.294846044466034,
+  "timestamp": "2025-12-28 23:14:42",
+  "best_score": 184.04448583825132,
   "parameters": {
     "min_confluence": 5,
     "min_quality_factors": 2,
@@ -20,7 +20,7 @@
     "partial_exit_at_1r": true,
     "use_adx_slope_rising": false,
     "partial_exit_pct": 0.35,
-    "generated_at": "2025-12-28T22:41:12.150999Z",
+    "generated_at": "2025-12-28T23:14:42.275321Z",
     "generated_by": "ftmo_challenge_analyzer.py",
     "version": "1.0.0"
   }

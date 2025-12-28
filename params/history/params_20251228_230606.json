@@ -16,7 +16,7 @@
   "partial_exit_at_1r": true,
   "use_adx_slope_rising": false,
   "partial_exit_pct": 0.35,
-  "generated_at": "2025-12-28T23:14:42.275321Z",
+  "generated_at": "2025-12-28T23:06:06.756713Z",
   "generated_by": "ftmo_challenge_analyzer.py",
   "version": "1.0.0"
 }
