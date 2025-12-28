@@ -61,7 +61,7 @@ from config import FOREX_PAIRS, METALS, INDICES, CRYPTO_ASSETS
 from tradr.risk.position_sizing import calculate_lot_size, get_contract_specs
 from params.params_loader import save_optimized_params
 from params.optimization_config import get_optimization_config, OptimizationConfig
-from output_manager import OutputManager, get_output_manager
+from tradr.utils.output_manager import OutputManager, get_output_manager
 
 # Professional Quant Suite Integration
 from professional_quant_suite import (

@@ -32,6 +32,9 @@ optimization_output.log
 # Generated assets (unused)
 generated-icon.png
 
+# Archive folder (old/unused code for reference)
+_archive/
+
 # Parameter history (can grow large during optimization runs)
 # Uncomment if you want to exclude from git:
 # params/history/
