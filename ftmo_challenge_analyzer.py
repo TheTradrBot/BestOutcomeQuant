@@ -100,7 +100,6 @@ OPTUNA_STUDY_NAME = OPT_CONFIG.study_name
 
 _DATA_CACHE: Dict[str, List[Dict]] = {}
 OPTUNA_STUDY_NAME = "regime_adaptive_v2_clean"
-PROGRESS_LOG_FILE = "ftmo_optimization_progress.txt"
 
 # FIXED PERIODS FOR CONSISTENT BACKTESTING
 # These dates are locked to ensure reproducible results and proper train/validation splits
@@ -247,19 +246,6 @@ def check_adx_filter(candles: List[Dict], min_adx: float = 25.0) -> Tuple[bool, 
     return adx > min_adx, adx
 
 
-def log_optimization_progress(trial_num: int, value: float, best_value: float, best_params: Dict):
-    """Append optimization progress to log file."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    key_params = {k: round(v, 3) if isinstance(v, float) else v 
-                  for k, v in list(best_params.items())[:5]}
-    log_entry = (
-        f"[{timestamp}] Trial #{trial_num}: value={value:.0f}, "
-        f"best_value={best_value:.0f}, params={json.dumps(key_params)}\n"
-    )
-    with open(PROGRESS_LOG_FILE, 'a') as f:
-        f.write(log_entry)
-
-
 def show_optimization_status():
     """Display current optimization status without running new trials."""
     import optuna
@@ -301,17 +287,6 @@ def show_optimization_status():
     except Exception as e:
         print(f"\nError loading study: {e}")
         return
-    
-    if os.path.exists(PROGRESS_LOG_FILE):
-        print(f"\n{'='*60}")
-        print("RECENT PROGRESS (last 10 entries):")
-        print("=" * 60)
-        with open(PROGRESS_LOG_FILE, 'r') as f:
-            lines = f.readlines()
-            for line in lines[-10:]:
-                print(line.rstrip())
-    else:
-        print("\nNo progress log found yet.")
     
     print(f"\n{'='*60}")
     print("To resume optimization: python ftmo_challenge_analyzer.py")
@@ -633,7 +608,6 @@ def run_full_period_backtest(
     risk_per_trade_pct: float = 0.5,
     atr_min_percentile: float = 60.0,
     trail_activation_r: float = 2.2,
-    december_atr_multiplier: float = 1.5,
     volatile_asset_boost: float = 1.5,
     ml_min_prob: Optional[float] = None,
     excluded_assets: Optional[List[str]] = None,
@@ -729,7 +703,6 @@ def run_full_period_backtest(
                 risk_per_trade_pct=risk_per_trade_pct,
                 atr_min_percentile=atr_min_percentile,
                 trail_activation_r=trail_activation_r,
-                december_atr_multiplier=december_atr_multiplier,
                 volatile_asset_boost=volatile_asset_boost,
                 adx_trend_threshold=adx_trend_threshold,
                 adx_range_threshold=adx_range_threshold,
@@ -1100,7 +1073,6 @@ class OptunaOptimizer:
             'trail_activation_r': trial.suggest_float('trail_activation_r', 1.0, 3.0, step=0.5),   # Fixed: (3.0-1.0)/0.5=4
             
             # Seasonality Adjustments
-            'december_atr_multiplier': trial.suggest_float('december_atr_multiplier', 1.0, 2.0, step=0.2),  # Fixed: (2.0-1.0)/0.2=5
             'volatile_asset_boost': trial.suggest_float('volatile_asset_boost', 1.0, 2.0, step=0.2),       # Fixed: (2.0-1.0)/0.2=5
             'summer_risk_multiplier': trial.suggest_float('summer_risk_multiplier', 0.4, 1.0, step=0.2),   # NEW: Q3 seasonality
             
@@ -1117,7 +1089,6 @@ class OptunaOptimizer:
             risk_per_trade_pct=params['risk_per_trade_pct'],
             atr_min_percentile=params['atr_min_percentile'],
             trail_activation_r=params['trail_activation_r'],
-            december_atr_multiplier=params['december_atr_multiplier'],
             volatile_asset_boost=params['volatile_asset_boost'],
             ml_min_prob=None,
             require_adx_filter=True,
@@ -1435,13 +1406,6 @@ class OptunaOptimizer:
         def progress_callback(study, trial):
             nonlocal best_value_before_run
             
-            log_optimization_progress(
-                trial_num=trial.number,
-                value=trial.value if trial.value is not None else 0,
-                best_value=study.best_value if study.best_trial else 0,
-                best_params=study.best_params if study.best_trial else {}
-            )
-            
             # Check if this trial is STRICTLY better than the previous best
             is_new_best = False
             try:
@@ -1545,7 +1509,6 @@ class OptunaOptimizer:
                         risk_per_trade_pct=risk_pct,
                         atr_min_percentile=current_best_params.get('atr_min_percentile', 60.0),
                         trail_activation_r=current_best_params.get('trail_activation_r', 2.2),
-                        december_atr_multiplier=current_best_params.get('december_atr_multiplier', 1.5),
                         volatile_asset_boost=current_best_params.get('volatile_asset_boost', 1.5),
                         ml_min_prob=None,
                         require_adx_filter=True,
@@ -1569,7 +1532,6 @@ class OptunaOptimizer:
                         risk_per_trade_pct=risk_pct,
                         atr_min_percentile=current_best_params.get('atr_min_percentile', 60.0),
                         trail_activation_r=current_best_params.get('trail_activation_r', 2.2),
-                        december_atr_multiplier=current_best_params.get('december_atr_multiplier', 1.5),
                         volatile_asset_boost=current_best_params.get('volatile_asset_boost', 1.5),
                         ml_min_prob=None,
                         require_adx_filter=True,
@@ -1593,7 +1555,6 @@ class OptunaOptimizer:
                         risk_per_trade_pct=risk_pct,
                         atr_min_percentile=current_best_params.get('atr_min_percentile', 60.0),
                         trail_activation_r=current_best_params.get('trail_activation_r', 2.2),
-                        december_atr_multiplier=current_best_params.get('december_atr_multiplier', 1.5),
                         volatile_asset_boost=current_best_params.get('volatile_asset_boost', 1.5),
                         ml_min_prob=None,
                         require_adx_filter=True,
@@ -1632,7 +1593,6 @@ class OptunaOptimizer:
                         'risk_per_trade_pct': current_best_params.get('risk_per_trade_pct', 0.5),
                         'atr_min_percentile': current_best_params.get('atr_min_percentile', 75.0),
                         'trail_activation_r': current_best_params.get('trail_activation_r', 2.2),
-                        'december_atr_multiplier': current_best_params.get('december_atr_multiplier', 1.5),
                         'volatile_asset_boost': current_best_params.get('volatile_asset_boost', 1.5),
                         'adx_trend_threshold': current_best_params.get('adx_trend_threshold', 25.0),
                         'adx_range_threshold': current_best_params.get('adx_range_threshold', 20.0),
@@ -1696,7 +1656,6 @@ class OptunaOptimizer:
             'risk_per_trade_pct': self.best_params.get('risk_per_trade_pct', 0.5),
             'atr_min_percentile': self.best_params.get('atr_min_percentile', 75.0),
             'trail_activation_r': self.best_params.get('trail_activation_r', 2.2),
-            'december_atr_multiplier': self.best_params.get('december_atr_multiplier', 1.5),
             'volatile_asset_boost': self.best_params.get('volatile_asset_boost', 1.5),
             # Regime-Adaptive V2 parameters
             'adx_trend_threshold': self.best_params.get('adx_trend_threshold', 25.0),
@@ -1805,7 +1764,6 @@ def validate_top_trials(study, top_n: int = 5) -> List[Dict]:
             risk_per_trade_pct=params.get('risk_per_trade_pct', 0.5),
             atr_min_percentile=params.get('atr_min_percentile', 60.0),
             trail_activation_r=params.get('trail_activation_r', 2.2),
-            december_atr_multiplier=params.get('december_atr_multiplier', 1.5),
             volatile_asset_boost=params.get('volatile_asset_boost', 1.5),
             ml_min_prob=None,
             require_adx_filter=True,
@@ -2045,7 +2003,6 @@ def multi_objective_function(trial) -> Tuple[float, float, float]:
         'trail_activation_r': trial.suggest_float('trail_activation_r', 1.0, 3.0, step=0.5),
         
         # Seasonality Adjustments
-        'december_atr_multiplier': trial.suggest_float('december_atr_multiplier', 1.0, 2.0, step=0.2),
         'volatile_asset_boost': trial.suggest_float('volatile_asset_boost', 1.0, 2.0, step=0.2),
         'summer_risk_multiplier': trial.suggest_float('summer_risk_multiplier', 0.4, 1.0, step=0.2),
         
@@ -2065,7 +2022,6 @@ def multi_objective_function(trial) -> Tuple[float, float, float]:
         risk_per_trade_pct=risk_pct,
         atr_min_percentile=params['atr_min_percentile'],
         trail_activation_r=params['trail_activation_r'],
-        december_atr_multiplier=params['december_atr_multiplier'],
         volatile_asset_boost=params['volatile_asset_boost'],
         ml_min_prob=None,
         require_adx_filter=True,
@@ -2231,7 +2187,6 @@ def run_multi_objective_optimization(n_trials: int = 50) -> Dict:
                 risk_per_trade_pct=params.get('risk_per_trade_pct', 0.5),
                 atr_min_percentile=params.get('atr_min_percentile', 60.0),
                 trail_activation_r=params.get('trail_activation_r', 2.2),
-                december_atr_multiplier=params.get('december_atr_multiplier', 1.5),
                 volatile_asset_boost=params.get('volatile_asset_boost', 1.5),
                 ml_min_prob=None,
                 require_adx_filter=True,
@@ -2501,7 +2456,6 @@ def main():
         risk_per_trade_pct=best_params.get('risk_per_trade_pct', 0.5),
         atr_min_percentile=best_params.get('atr_min_percentile', 60.0),
         trail_activation_r=best_params.get('trail_activation_r', 2.2),
-        december_atr_multiplier=best_params.get('december_atr_multiplier', 1.5),
         volatile_asset_boost=best_params.get('volatile_asset_boost', 1.5),
         ml_min_prob=None,
         require_adx_filter=True,

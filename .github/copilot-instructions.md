@@ -89,7 +89,8 @@ python main_live_bot.py
 ### Background Optimization
 ```bash
 nohup python ftmo_challenge_analyzer.py > optimization_output.log 2>&1 &
-tail -f ftmo_optimization_progress.txt  # Monitor progress
+tail -f ftmo_analysis_output/TPE/optimization.log  # Monitor TPE progress
+tail -f ftmo_analysis_output/NSGA/optimization.log # Monitor NSGA-II progress
 ```
 
 ## FTMO Challenge Rules (hardcoded limits)

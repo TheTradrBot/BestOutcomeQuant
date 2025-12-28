@@ -8,6 +8,7 @@
 ## Recent Changes
 
 ### Features
+- [c6da3a2] feat: Comprehensive auto-updating documentation system (2025-12-28)
 - [56850d8] feat: Add --single flag and separate NSGA/TPE output directories (2025-12-28)
 - [5c926b5] feat: Smart NSGA-II flow with OOS validation (2025-12-28)
 - [0c4f28d] feat: Expand NSGA-II parameter space (25+ params) (2025-12-28)
@@ -15,6 +16,7 @@
 ### Bug Fixes
 
 ### Documentation
+- [00e8d26] docs: Add AI Assistant Quick Start Guide (2025-12-28)
 
 ### Refactoring
 - [cdd082f] refactor: Final cleanup - organize codebase structure (2025-12-28)

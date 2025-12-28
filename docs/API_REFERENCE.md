@@ -776,12 +776,11 @@ Returns:
 
 ---
 
-#### `check_volatility_filter(candles: List[Dict], atr_min_percentile: float, current_date: Optional[datetime], december_atr_multiplier: float)`
+#### `check_volatility_filter(candles: List[Dict], atr_min_percentile: float, current_date: Optional[datetime])`
 
 **Returns**: `Tuple[bool, float]`
 
 Check if current volatility is above minimum threshold.
-In December, applies december_atr_multiplier to be more strict.
 
 ---
 
@@ -902,14 +901,6 @@ Returns:
 
 ---
 
-#### `log_optimization_progress(trial_num: int, value: float, best_value: float, best_params: Dict)`
-
-**Returns**: `None`
-
-Append optimization progress to log file.
-
----
-
 #### `show_optimization_status()`
 
 **Returns**: `None`
@@ -966,7 +957,7 @@ Get list of all tradeable assets.
 
 ---
 
-#### `run_full_period_backtest(start_date: datetime, end_date: datetime, min_confluence: int, min_quality_factors: int, risk_per_trade_pct: float, atr_min_percentile: float, trail_activation_r: float, december_atr_multiplier: float, volatile_asset_boost: float, ml_min_prob: Optional[float], excluded_assets: Optional[List[str]], require_adx_filter: bool, min_adx: float, use_adx_regime_filter: bool, adx_trend_threshold: float, adx_range_threshold: float, trend_min_confluence: int, range_min_confluence: int, rsi_oversold_range: float, rsi_overbought_range: float, atr_volatility_ratio: float, atr_trail_multiplier: float, partial_exit_at_1r: bool, partial_exit_pct: float, use_adx_slope_rising: bool, atr_vol_ratio_range: float)`
+#### `run_full_period_backtest(start_date: datetime, end_date: datetime, min_confluence: int, min_quality_factors: int, risk_per_trade_pct: float, atr_min_percentile: float, trail_activation_r: float, volatile_asset_boost: float, ml_min_prob: Optional[float], excluded_assets: Optional[List[str]], require_adx_filter: bool, min_adx: float, use_adx_regime_filter: bool, adx_trend_threshold: float, adx_range_threshold: float, trend_min_confluence: int, range_min_confluence: int, rsi_oversold_range: float, rsi_overbought_range: float, atr_volatility_ratio: float, atr_trail_multiplier: float, partial_exit_at_1r: bool, partial_exit_pct: float, use_adx_slope_rising: bool, atr_vol_ratio_range: float)`
 
 **Returns**: `List[Trade]`
 

@@ -73,7 +73,6 @@ params = StrategyParams(
     risk_per_trade_pct=1.0,
     atr_min_percentile=20.0,
     trail_activation_r=1.0,
-    december_atr_multiplier=1.0,
     volatile_asset_boost=1.0,
     adx_trend_threshold=20.0,
     adx_range_threshold=15.0,

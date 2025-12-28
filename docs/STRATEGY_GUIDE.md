@@ -194,7 +194,6 @@ lot_size = risk_amount / (sl_pips * pip_value)
 
 ### Seasonal Adjustments
 - **Summer (June-Aug)**: Risk × 0.75 (lower volatility)
-- **December**: ATR × 1.7000000000000002 (holiday spike)
 
 ---
 
@@ -209,7 +208,6 @@ lot_size = risk_amount / (sl_pips * pip_value)
   "risk_per_trade_pct": 0.3,
   "atr_min_percentile": 55.0,
   "trail_activation_r": 1.0,
-  "december_atr_multiplier": 1.7000000000000002,
   "volatile_asset_boost": 1.1,
   "adx_trend_threshold": 22.0,
   "adx_range_threshold": 14.0,

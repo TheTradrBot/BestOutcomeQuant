@@ -417,7 +417,6 @@ lot_size = risk_amount / (sl_pips * pip_value)
 
 ### Seasonal Adjustments
 - **Summer (June-Aug)**: Risk × {params.get('summer_risk_multiplier', 0.75)} (lower volatility)
-- **December**: ATR × {params.get('december_atr_multiplier', 1.75)} (holiday spike)
 
 ---
 

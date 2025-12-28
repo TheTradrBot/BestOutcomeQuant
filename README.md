@@ -84,5 +84,5 @@ Optimization is resumable via SQLite database: `ftmo_optimization.db`
 
 ---
 
-**Last Documentation Update**: 2025-12-28 13:10:13  
+**Last Documentation Update**: 2025-12-28 13:24:23  
 **Auto-generated**: Run `python scripts/update_docs.py` to regenerate docs

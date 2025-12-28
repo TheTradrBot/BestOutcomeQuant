@@ -1,17 +1,19 @@
 {
-  "min_confluence_score": 2,
   "min_quality_factors": 1,
   "risk_per_trade_pct": 0.3,
   "atr_min_percentile": 55.0,
   "trail_activation_r": 1.0,
-  "december_atr_multiplier": 1.7000000000000002,
   "volatile_asset_boost": 1.1,
   "adx_trend_threshold": 22,
   "adx_range_threshold": 14,
   "trend_min_confluence": 4,
   "range_min_confluence": 4,
-  "atr_vol_ratio_range": 0.7,
   "atr_trail_multiplier": 2.2,
   "partial_exit_at_1r": false,
-  "partial_exit_pct": 0.35
+  "partial_exit_pct": 0.35,
+  "min_confluence": 2,
+  "atr_volatility_ratio": 0.7,
+  "rsi_oversold_range": 25.0,
+  "rsi_overbought_range": 75.0,
+  "use_adx_slope_rising": false
 }

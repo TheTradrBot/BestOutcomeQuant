@@ -4,7 +4,6 @@
   "risk_per_trade_pct": 0.3,
   "atr_min_percentile": 55.0,
   "trail_activation_r": 1.0,
-  "december_atr_multiplier": 1.7000000000000002,
   "volatile_asset_boost": 1.1,
   "adx_trend_threshold": 22.0,
   "adx_range_threshold": 14.0,

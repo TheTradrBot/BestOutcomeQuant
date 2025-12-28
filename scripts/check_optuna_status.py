@@ -71,7 +71,6 @@ def main():
             'risk_per_trade_pct': best_params.get('risk_per_trade_pct', 0.5),
             'atr_min_percentile': best_params.get('atr_min_percentile', 60.0),
             'trail_activation_r': best_params.get('trail_activation_r', 2.2),
-            'december_atr_multiplier': best_params.get('december_atr_multiplier', 1.0),
             'volatile_asset_boost': best_params.get('volatile_asset_boost', 1.0),
             'adx_trend_threshold': best_params.get('adx_trend_threshold', 25),
             'adx_range_threshold': best_params.get('adx_range_threshold', 20),

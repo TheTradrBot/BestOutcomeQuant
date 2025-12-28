@@ -150,7 +150,6 @@ class StrategyParams:
     
     # New FTMO challenge parameters
     trail_activation_r: float = 2.2  # Delay trailing stop activation until this R is reached
-    december_atr_multiplier: float = 1.5  # Extra strict ATR threshold only in December
     volatile_asset_boost: float = 1.5  # Boost scoring for high-ATR assets
     
     # ============================================================================
@@ -245,7 +244,6 @@ class StrategyParams:
             "use_mean_reversion": self.use_mean_reversion,
             "ml_min_prob": self.ml_min_prob,
             "trail_activation_r": self.trail_activation_r,
-            "december_atr_multiplier": self.december_atr_multiplier,
             "volatile_asset_boost": self.volatile_asset_boost,
             "adx_trend_threshold": self.adx_trend_threshold,
             "adx_range_threshold": self.adx_range_threshold,
@@ -2758,7 +2756,6 @@ def simulate_trades(
                         candles[:bar_idx+1], 
                         params.atr_min_percentile,
                         current_date=current_date,
-                        december_atr_multiplier=params.december_atr_multiplier
                     )
                     if not passes_vol:
                         entered_signal_ids.add(sig_id)
@@ -2972,19 +2969,13 @@ def check_volatility_filter(
     candles: List[Dict],
     atr_min_percentile: float = 60.0,
     current_date: Optional[datetime] = None,
-    december_atr_multiplier: float = 1.0,
 ) -> Tuple[bool, float]:
     """
     Check if current volatility is above minimum threshold.
-    In December, applies december_atr_multiplier to be more strict.
     """
     _, atr_percentile = _calculate_atr_percentile(candles, period=14, lookback=100)
     
-    effective_threshold = atr_min_percentile
-    if current_date and current_date.month == 12:
-        effective_threshold = min(95.0, atr_min_percentile * december_atr_multiplier)
-    
-    passes_filter = atr_percentile >= effective_threshold
+    passes_filter = atr_percentile >= atr_min_percentile
     return (passes_filter, atr_percentile)
 
 
