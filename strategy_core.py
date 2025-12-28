@@ -39,6 +39,52 @@ def _get_candle_datetime(candle: Dict) -> Optional[datetime]:
         return None
 
 
+def _is_market_holiday(dt: datetime) -> bool:
+    """
+    Check if date is a major market holiday (market closed).
+    Returns True if market is closed, False if open.
+    """
+    if dt is None:
+        return False
+    
+    # Major holidays when forex/indices markets are closed
+    # New Year's Day, Christmas
+    if (dt.month == 1 and dt.day == 1) or (dt.month == 12 and dt.day == 25):
+        return True
+    
+    # Good Friday / Easter (approximate - 3rd or 4th Friday in April)
+    if dt.month == 4 and dt.weekday() == 4 and 15 <= dt.day <= 22:
+        return True
+    
+    # Christmas Eve (half day, treat as closed)
+    if dt.month == 12 and dt.day == 24:
+        return True
+    
+    return False
+
+
+def _has_opposing_position(open_trades: List[Dict], symbol: str, direction: str) -> bool:
+    """
+    Check if there's already an open position in the opposite direction for this symbol.
+    FTMO does not allow hedging (long and short on same instrument simultaneously).
+    
+    Args:
+        open_trades: List of currently open trade dictionaries
+        symbol: Symbol to check (from signal)
+        direction: Direction of new trade ("bullish" or "bearish")
+    
+    Returns:
+        True if there's an opposing position (not allowed), False otherwise
+    """
+    opposite_direction = "bearish" if direction == "bullish" else "bullish"
+    
+    for ot in open_trades:
+        if ot.get("symbol") == symbol and ot.get("direction") == opposite_direction:
+            return True
+    
+    return False
+
+
 def _slice_htf_by_timestamp(
     htf_candles: Optional[List[Dict]],
     reference_dt: datetime
@@ -2722,8 +2768,19 @@ def simulate_trades(
                     entered_signal_ids.add(sig_id)
                     continue
                 
+                # Check for market holidays
+                bar_dt = _get_candle_datetime(c)
+                if bar_dt and _is_market_holiday(bar_dt):
+                    # Skip entry on holidays, but don't mark as entered (retry next day)
+                    continue
+                
                 theoretical_entry = sig.entry
                 direction = sig.direction
+                
+                # FTMO Rule: No opposing positions (no hedging)
+                if _has_opposing_position(open_trades, symbol, direction):
+                    entered_signal_ids.add(sig_id)
+                    continue
                 
                 if direction == "bullish":
                     if low <= theoretical_entry <= high:
@@ -2787,6 +2844,7 @@ def simulate_trades(
                 
                 open_trades.append({
                     "signal_id": sig_id,
+                    "symbol": symbol,  # Add symbol for opposing position check
                     "direction": direction,
                     "entry_bar": bar_idx,
                     "entry_price": entry_price,

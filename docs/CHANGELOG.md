@@ -19,6 +19,7 @@
 - [00e8d26] docs: Add AI Assistant Quick Start Guide (2025-12-28)
 
 ### Refactoring
+- [2210195] refactor: Remove december_atr_multiplier parameter and legacy logging (2025-12-28)
 - [cdd082f] refactor: Final cleanup - organize codebase structure (2025-12-28)
 - [b4e01f6] refactor: Clean output system with human-readable log (2025-12-28)
 - [6e0ad97] refactor: Unified optimization config system (2025-12-28)

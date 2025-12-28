@@ -65,8 +65,11 @@ python ftmo_challenge_analyzer.py --multi --trials 100
 # With ADX regime filtering enabled
 python ftmo_challenge_analyzer.py --multi --adx --trials 100
 
-# Background run
-nohup python ftmo_challenge_analyzer.py --multi --adx --trials 200 > opt.log 2>&1 &
+# Background run (recommended: use helper script)
+./run_optimization.sh --multi --trials 200
+
+# Manual background run
+nohup python ftmo_challenge_analyzer.py --multi --adx --trials 200 > ftmo_analysis_output/NSGA/run.log 2>&1 &
 ```
 
 ### TPE Single-Objective (Faster, simpler scoring)
@@ -76,13 +79,17 @@ python ftmo_challenge_analyzer.py --single --trials 100
 
 # With ADX regime filtering
 python ftmo_challenge_analyzer.py --single --adx --trials 100
+
+# Background run (recommended: use helper script)
+./run_optimization.sh --single --trials 100
 ```
 
 ### Output Structure
 ```
 ftmo_analysis_output/
 ├── NSGA/                          # Multi-objective runs
-│   ├── optimization.log           # Real-time NSGA-II progress
+│   ├── run.log                    # Complete console output (when using run_optimization.sh)
+│   ├── optimization.log           # Trial results only (via OutputManager)
 │   ├── best_trades_training.csv
 │   ├── best_trades_validation.csv
 │   ├── best_trades_final.csv
@@ -90,7 +97,8 @@ ftmo_analysis_output/
 │   ├── symbol_performance.csv
 │   └── optimization_report.csv
 └── TPE/                           # Single-objective runs
-    ├── optimization.log           # Real-time TPE progress
+    ├── run.log                    # Complete console output (when using run_optimization.sh)
+    ├── optimization.log           # Trial results only (via OutputManager)
     ├── best_trades_training.csv
     ├── best_trades_validation.csv
     ├── best_trades_final.csv
@@ -98,3 +106,7 @@ ftmo_analysis_output/
     ├── symbol_performance.csv
     └── optimization_report.csv
 ```
+
+**Log Files Explained:**
+- `run.log`: Complete output including "Processing asset X/37", warnings, all debug info
+- `optimization.log`: Clean trial results only (score, R, win rate, profit)

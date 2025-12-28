@@ -91,12 +91,28 @@ python ftmo_challenge_analyzer.py --status
 ```
 
 ### Background Run (Replit/VPS)
+
+**Recommended: Use the run_optimization.sh helper script**
+```bash
+# TPE single-objective (auto-logs to ftmo_analysis_output/TPE/run.log)
+./run_optimization.sh --single --trials 100
+
+# NSGA-II multi-objective (auto-logs to ftmo_analysis_output/NSGA/run.log)
+./run_optimization.sh --multi --trials 500
+
+# Monitor live progress
+tail -f ftmo_analysis_output/TPE/run.log    # for TPE
+tail -f ftmo_analysis_output/NSGA/run.log   # for NSGA-II
+```
+
+**Manual nohup (advanced)**
 ```bash
 # Start in background
-nohup python ftmo_challenge_analyzer.py --multi --trials 500 > opt.log 2>&1 &
+nohup python ftmo_challenge_analyzer.py --multi --trials 500 > ftmo_analysis_output/NSGA/run.log 2>&1 &
 
 # Monitor progress
-tail -f ftmo_analysis_output/NSGA/optimization.log
+tail -f ftmo_analysis_output/NSGA/optimization.log  # Trial results only
+tail -f ftmo_analysis_output/NSGA/run.log          # Complete output
 
 # Check if still running
 ps aux | grep ftmo_challenge_analyzer

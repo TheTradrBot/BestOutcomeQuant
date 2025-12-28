@@ -63,6 +63,15 @@ htf_candles = _slice_htf_by_timestamp(weekly_candles, current_daily_dt)
 ## Development Commands
 
 ### Run Optimization (resumable)
+
+**Recommended: Use helper script for background runs**
+```bash
+./run_optimization.sh --single --trials 100  # TPE (logs to ftmo_analysis_output/TPE/run.log)
+./run_optimization.sh --multi --trials 100   # NSGA-II (logs to ftmo_analysis_output/NSGA/run.log)
+tail -f ftmo_analysis_output/TPE/run.log     # Monitor complete output
+```
+
+**Direct Python execution**
 ```bash
 python ftmo_challenge_analyzer.py             # Run/resume optimization
 python ftmo_challenge_analyzer.py --status    # Check progress
@@ -76,8 +85,10 @@ Uses Optuna with SQLite storage (`ftmo_optimization.db`) for crash-resistant opt
 Configuration loaded from `params/optimization_config.json`.
 
 **Output Structure:**
-- NSGA-II runs: `ftmo_analysis_output/NSGA/`
-- TPE runs: `ftmo_analysis_output/TPE/`
+- NSGA-II runs: `ftmo_analysis_output/NSGA/` (run.log + optimization.log + CSVs)
+- TPE runs: `ftmo_analysis_output/TPE/` (run.log + optimization.log + CSVs)
+- `run.log`: Complete console output (all debug info, asset processing)
+- `optimization.log`: Trial results only (clean, structured)
 - Each mode has its own optimization.log and CSV files
 
 ### Run Live Bot (Windows VM only)
@@ -88,7 +99,11 @@ python main_live_bot.py
 
 ### Background Optimization
 ```bash
-nohup python ftmo_challenge_analyzer.py > optimization_output.log 2>&1 &
+# Recommended: Use helper script
+./run_optimization.sh --single --trials 100  # Auto-logs to ftmo_analysis_output/TPE/run.log
+
+# Manual nohup
+nohup python ftmo_challenge_analyzer.py > ftmo_analysis_output/TPE/run.log 2>&1 &
 tail -f ftmo_analysis_output/TPE/optimization.log  # Monitor TPE progress
 tail -f ftmo_analysis_output/NSGA/optimization.log # Monitor NSGA-II progress
 ```

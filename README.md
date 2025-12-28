@@ -5,14 +5,18 @@ Automated MetaTrader 5 trading bot for FTMO 200K Challenge accounts. Uses a 7-Pi
 ## Quick Start
 
 ```bash
-# Run NSGA-II multi-objective optimization (recommended)
-python ftmo_challenge_analyzer.py --multi --trials 100
+# Run optimization (recommended: use helper script for background runs)
+./run_optimization.sh --multi --trials 100   # NSGA-II (auto-logs to ftmo_analysis_output/NSGA/run.log)
+./run_optimization.sh --single --trials 100  # TPE (auto-logs to ftmo_analysis_output/TPE/run.log)
 
-# Run TPE single-objective optimization (faster)
-python ftmo_challenge_analyzer.py --single --trials 100
+# Or run directly
+python ftmo_challenge_analyzer.py --multi --trials 100   # NSGA-II multi-objective
+python ftmo_challenge_analyzer.py --single --trials 100  # TPE single-objective
+python ftmo_challenge_analyzer.py --multi --adx --trials 100  # With ADX regime filter
 
-# Enable ADX regime filtering
-python ftmo_challenge_analyzer.py --multi --adx --trials 100
+# Monitor live progress
+tail -f ftmo_analysis_output/TPE/run.log          # Complete output
+tail -f ftmo_analysis_output/TPE/optimization.log # Trial results only
 
 # Check optimization status
 python ftmo_challenge_analyzer.py --status
@@ -40,28 +44,20 @@ python main_live_bot.py
 
 ## Optimization & Backtesting
 
-The optimizer uses professional quant best practices with **two optimization modes**:
+The optimizer uses professional quant best practices:
 
-### NSGA-II Multi-Objective (Default)
-- Optimizes 3 objectives simultaneously: Total R, Sharpe Ratio, Win Rate
-- Produces Pareto frontier with multiple optimal solutions
-- Better for balancing profit vs risk (critical for FTMO 10% max drawdown)
-- Output: `ftmo_analysis_output/NSGA/`
+- **TRAINING PERIOD**: January 1, 2024 – September 30, 2024 (in-sample optimization)
+- **VALIDATION PERIOD**: October 1, 2024 – December 31, 2024 (out-of-sample test)
+- **FINAL BACKTEST**: Full year 2024 (December fully open for trading)
+- **ADX > 25 trend-strength filter** applied to avoid ranging markets.
 
-### TPE Single-Objective
-- Optimizes composite score: R + Sharpe_bonus + PF_bonus + WR_bonus
-- Faster, simpler scoring function
-- Output: `ftmo_analysis_output/TPE/`
+All trades from the final backtest are exported to:
+`ftmo_analysis_output/all_trades_2024_full.csv`
 
-### Data Partitioning
-- **TRAINING PERIOD**: January 1, 2023 – September 30, 2024 (in-sample optimization)
-- **VALIDATION PERIOD**: October 1, 2024 – December 26, 2025 (out-of-sample test)
-- **FINAL BACKTEST**: Full period 2023-2025 (December fully open for trading)
-- **ADX regime filter** (optional): Adapts strategy to trend/range/transition modes
+Parameters are saved to `params/current_params.json`
 
-All trades from the final backtest are exported to mode-specific directories.
-Parameters are saved to `params/current_params.json`.
-Optimization is resumable via SQLite database: `ftmo_optimization.db`
+Optimization is resumable and can be checked with: `python ftmo_challenge_analyzer.py --status`
+
 
 ## Documentation
 
@@ -84,5 +80,5 @@ Optimization is resumable via SQLite database: `ftmo_optimization.db`
 
 ---
 
-**Last Documentation Update**: 2025-12-28 13:24:23  
+**Last Documentation Update**: 2025-12-28 14:19:50  
 **Auto-generated**: Run `python scripts/update_docs.py` to regenerate docs

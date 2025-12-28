@@ -877,9 +877,21 @@ def convert_to_backtest_trade(
     )
 
 
-def export_trades_to_csv(trades: List[Trade], filename: str, risk_per_trade_pct: float = 0.5):
-    """Export trades to CSV with all required columns."""
-    filepath = OUTPUT_DIR / filename
+def export_trades_to_csv(trades: List[Trade], filename: str, risk_per_trade_pct: float = 0.5, output_dir: Path = None):
+    """
+    Export trades to CSV with all required columns.
+    
+    Note: For new code, prefer using OutputManager.save_best_trial_trades() 
+    which automatically uses the correct mode-specific output directory.
+    
+    Args:
+        trades: List of Trade objects
+        filename: Output filename
+        risk_per_trade_pct: Risk percentage per trade
+        output_dir: Optional output directory (defaults to ftmo_analysis_output/)
+    """
+    target_dir = output_dir if output_dir else OUTPUT_DIR
+    filepath = target_dir / filename
     
     if not trades:
         print(f"No trades to export to {filename}")
@@ -1384,12 +1396,18 @@ class OptunaOptimizer:
         
         existing_trials = len(study.trials)
         previous_best_value = None  # Track previous best to detect real improvements
+        previous_best_trial_number = None
         if existing_trials > 0:
             print(f"Resuming from existing study with {existing_trials} completed trials")
             try:
                 if study.best_trial and study.best_value is not None:
                     previous_best_value = study.best_value
+                    previous_best_trial_number = study.best_trial.number
                     print(f"Current best value: {study.best_value:.0f}")
+                    
+                    # Sync OutputManager's best_score with database to prevent false "NEW BEST" messages
+                    om = get_output_manager()
+                    om.sync_best_from_study(previous_best_value, previous_best_trial_number)
                 else:
                     print("No best trial found yet (all trials may have failed)")
             except (ValueError, AttributeError) as e:
@@ -1610,6 +1628,9 @@ class OptunaOptimizer:
                     print("  Saving best_params.json for live bot...")
                     save_optimized_params(params_to_save, backup=True)
                     
+                    # Also save to output manager for archiving with this run
+                    self.output_manager.save_best_params(params_to_save)
+                    
                     print(f"✅ Updated best trial exports for trial #{trial.number}\n")
                     
                 except Exception as e:
@@ -1675,6 +1696,7 @@ class OptunaOptimizer:
         
         try:
             save_optimized_params(params_to_save, backup=True)
+            self.output_manager.save_best_params(params_to_save)  # Also save for archiving
             print(f"\nOptimized parameters saved to params/current_params.json")
         except Exception as e:
             print(f"Failed to save params: {e}")
@@ -2476,11 +2498,17 @@ def main():
     
     risk_pct = best_params.get('risk_per_trade_pct', 0.5)
     
-    # Export all three CSV files at the end
-    print("\n📊 Exporting final CSV files...")
-    export_trades_to_csv(training_trades, "all_trades_jan_dec_2024.csv", risk_pct)
-    export_trades_to_csv(validation_trades if validation_trades else [], "all_trades_2024_full.csv", risk_pct)
-    export_trades_to_csv(full_year_trades, "all_trades_2023_2025_full.csv", risk_pct)
+    # Use OutputManager for structured CSV exports (to mode-specific directory)
+    print("\n📊 Exporting final CSV files via OutputManager...")
+    om = get_output_manager()
+    om.save_best_trial_trades(
+        training_trades=training_trades,
+        validation_trades=validation_trades if validation_trades else [],
+        final_trades=full_year_trades,
+        risk_pct=risk_pct,
+    )
+    om.generate_monthly_stats(full_year_trades, "final", risk_pct)
+    om.generate_symbol_performance(full_year_trades, risk_pct)
     print("✅ All CSV files exported successfully\n")
     
     full_year_results = print_period_results(
@@ -2634,6 +2662,10 @@ def main():
     print(f"  - ftmo_analysis_output/optimization.log (trial history)")
     print(f"  - ftmo_analysis_output/optimization_report.csv (final report)")
     print(f"  - {config.db_path} (resumable optimization state)")
+    
+    # Archive this run to history at the END
+    om = get_output_manager()
+    om.archive_current_run()
     
     print(f"\n✅ Optimization complete. Ready for live trading.")
 
