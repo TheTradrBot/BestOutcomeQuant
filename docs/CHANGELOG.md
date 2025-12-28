@@ -30,6 +30,22 @@
 
 ## Version History
 
+### v3.1 (2025-12-28)
+**Update**: History Archiving + Trading Filters
+
+**New Features**:
+- ✅ History archiving at END of run (run_001, run_002, etc.)
+- ✅ Holiday filter: blocks trades on Jan 1, Dec 24-25, Good Friday
+- ✅ Opposing position filter: prevents FTMO hedging rule violations
+- ✅ run_optimization.sh helper script for background runs
+- ✅ Sync best_score with Optuna database on resume
+
+**Bug Fixes**:
+- Fixed CSV export to use correct output directory
+- Fixed false "NEW BEST" messages when resuming studies
+
+---
+
 ### v3.0 (2025-12-28)
 **Major Update**: Unified Optimization Config + Smart NSGA-II Flow
 

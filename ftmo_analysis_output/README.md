@@ -68,16 +68,17 @@ cp ftmo_analysis_output/TPE/history/run_005/best_params.json params/current_para
 
 ## Archiving Strategy
 
-When you start a new optimization run:
-1. Previous run's files are moved to `history/run_XXX/`
+When an optimization run completes:
+1. Current run's files are **copied** to `history/run_XXX/`
 2. Run number is automatically incremented (run_001 → run_002 → run_003...)
-3. Current directory starts fresh with trial #0, #1, #2...
+3. Original files remain in current directory for quick access
 4. All historical data is preserved for analysis
 
 This ensures:
 - ✅ Clean trial numbering per run
 - ✅ Complete history of all optimization experiments
 - ✅ Easy parameter recovery and comparison
+- ✅ Current best is always in `TPE/` or `NSGA/` directory
 - ✅ Reproducible results
 
 ## Tips
