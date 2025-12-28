@@ -2,7 +2,11 @@
 """Quick test to see if ANY trades are possible with loose settings"""
 
 import sys
-sys.path.insert(0, '/workspaces/mt5bot-new')
+import os
+
+# Add project root to path (parent of scripts/)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_ROOT)
 
 from strategy_core import simulate_trades
 import pandas as pd

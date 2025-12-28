@@ -14,6 +14,36 @@
 # Attached assets (development screenshots/pastes)
 attached_assets/
 
+# ===========================================
+# MT5 Trading Bot - Runtime Generated Files
+# ===========================================
+
+# Optuna SQLite databases (optimization storage)
+*.db
+
+# Optimization logs
+ftmo_optimization*.log
+ftmo_optimization*.txt
+optimization_output.log
+
+# Backup files
+*.backup
+
+# Generated assets (unused)
+generated-icon.png
+
+# Parameter history (can grow large during optimization runs)
+# Uncomment if you want to exclude from git:
+# params/history/
+
+# Analysis output (runtime generated)
+# Keep tracked for reproducibility, but can exclude if too large:
+# ftmo_analysis_output/
+
+# S/R cache (runtime computed)
+data/sr_cache/
+data/sr_levels/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

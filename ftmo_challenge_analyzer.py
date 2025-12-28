@@ -27,12 +27,18 @@ import json
 import csv
 import os
 import random
+import signal
+import sys
 import numpy as np
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple, Any, Union
 import pandas as pd
+
+# Force unbuffered output for better logging in nohup
+sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
+sys.stderr.reconfigure(line_buffering=True) if hasattr(sys.stderr, 'reconfigure') else None
 
 from strategy_core import (
     StrategyParams,
@@ -1345,8 +1351,13 @@ class OptunaOptimizer:
         
         return final_score
     
-    def run_optimization(self, n_trials: int = 5) -> Dict:
-        """Run Optuna optimization on TRAINING data only."""
+    def run_optimization(self, n_trials: int = 5, early_stopping_patience: int = 20) -> Dict:
+        """Run Optuna optimization on TRAINING data only.
+        
+        Args:
+            n_trials: Number of trials to run
+            early_stopping_patience: Stop if no improvement after this many trials (default: 20)
+        """
         import optuna
         from optuna.pruners import MedianPruner
         
@@ -1357,6 +1368,7 @@ class OptunaOptimizer:
         print(f"TRAINING PERIOD: 2023-01-01 to 2024-09-30")
         print(f"Regime-Adaptive V2: Trend (ADX >= threshold) + Conservative Range (ADX < threshold)")
         print(f"Storage: {OPTUNA_DB_PATH} (resumable)")
+        print(f"Early Stopping: After {early_stopping_patience} trials without improvement")
         print(f"{'='*60}")
         
         study = optuna.create_study(
@@ -1383,6 +1395,11 @@ class OptunaOptimizer:
         
         # Store best value before optimization starts for comparison
         best_value_before_run = previous_best_value
+        
+        # Early stopping tracking
+        trials_without_improvement = 0
+        last_best_value = previous_best_value
+        early_stopped = False
         
         def progress_callback(study, trial):
             nonlocal best_value_before_run
@@ -1411,6 +1428,24 @@ class OptunaOptimizer:
                         best_value_before_run = current_best
             except (ValueError, AttributeError):
                 pass
+            
+            # Early stopping check
+            nonlocal trials_without_improvement, last_best_value, early_stopped
+            current_best_for_stopping = study.best_value if study.best_trial else None
+            if current_best_for_stopping is not None:
+                if last_best_value is None or current_best_for_stopping > last_best_value:
+                    # Improvement found
+                    trials_without_improvement = 0
+                    last_best_value = current_best_for_stopping
+                else:
+                    # No improvement
+                    trials_without_improvement += 1
+                    
+                    if trials_without_improvement >= early_stopping_patience:
+                        print(f"\n🛑 EARLY STOPPING: No improvement for {early_stopping_patience} consecutive trials")
+                        print(f"   Best score remains: {last_best_value:.2f}")
+                        early_stopped = True
+                        study.stop()
             
             quarterly_stats = trial.user_attrs.get('quarterly_stats', {})
             overall_stats = trial.user_attrs.get('overall_stats', {})
@@ -1568,19 +1603,31 @@ class OptunaOptimizer:
                 except Exception as e:
                     print(f"⚠️  Error exporting CSVs for best trial: {e}\n")
         
-        study.optimize(
-            self._objective,
-            n_trials=n_trials,
-            show_progress_bar=False,
-            callbacks=[progress_callback]
-        )
+        try:
+            study.optimize(
+                self._objective,
+                n_trials=n_trials,
+                show_progress_bar=False,
+                callbacks=[progress_callback]
+            )
+        except optuna.exceptions.OptunaError as e:
+            # study.stop() raises this when early stopping
+            if "stopped" not in str(e).lower():
+                raise
         
         self.best_params = study.best_params
         self.best_score = study.best_value
         
-        print(f"\n{'='*60}")
-        print(f"OPTIMIZATION COMPLETE")
-        print(f"{'='*60}")
+        # Log early stopping status
+        if early_stopped:
+            print(f"\n{'='*60}")
+            print(f"OPTIMIZATION EARLY STOPPED (No improvement for {early_stopping_patience} trials)")
+            print(f"{'='*60}")
+        else:
+            print(f"\n{'='*60}")
+            print(f"OPTIMIZATION COMPLETE")
+            print(f"{'='*60}")
+        
         print(f"Total Trials: {len(study.trials)}")
         print(f"Best Score: {self.best_score:.0f}")
         print(f"Best Parameters:")
@@ -1627,6 +1674,8 @@ class OptunaOptimizer:
             'n_trials': n_trials,
             'total_trials': len(study.trials),
             'study': study,  # Return study for top 5 analysis
+            'early_stopped': early_stopped,
+            'trials_without_improvement': trials_without_improvement,
         }
 
 
@@ -2128,6 +2177,12 @@ def main():
         action="store_true",
         help="Use NSGA-II multi-objective optimization (Profit + Sharpe + WinRate)"
     )
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=20,
+        help="Early stopping patience - stop if no improvement after N trials (default: 20)"
+    )
     args = parser.parse_args()
     
     if args.status:
@@ -2136,7 +2191,8 @@ def main():
     
     n_trials = args.trials
     use_multi_objective = args.multi
-    
+    early_stopping_patience = args.patience
+
     print(f"\n{'='*80}")
     print("FTMO PROFESSIONAL OPTIMIZATION SYSTEM - REGIME-ADAPTIVE V2")
     print(f"{'='*80}")
@@ -2148,6 +2204,7 @@ def main():
     print(f"  TREND MODE:      ADX >= threshold (momentum following)")
     print(f"  RANGE MODE:      ADX < threshold (conservative mean reversion)")
     print(f"  TRANSITION:      NO ENTRIES (wait for regime confirmation)")
+    print(f"\nEarly Stopping: After {early_stopping_patience} trials without improvement")
     
     if use_multi_objective:
         print(f"\n🎯 MULTI-OBJECTIVE MODE: NSGA-II Pareto Optimization")
@@ -2169,9 +2226,13 @@ def main():
         best_params = results.get('best_params', {})
     else:
         optimizer = OptunaOptimizer()
-        results = optimizer.run_optimization(n_trials=n_trials)
+        results = optimizer.run_optimization(n_trials=n_trials, early_stopping_patience=early_stopping_patience)
         study = results.get('study')
         best_params = results.get('best_params', optimizer.best_params)
+        
+        # Log early stopping info
+        if results.get('early_stopped', False):
+            print(f"\n⏹️  Optimization early stopped after {results.get('trials_without_improvement', 0)} trials without improvement")
     
     # ============================================================================
     # TOP 5 VALIDATION COMPARISON

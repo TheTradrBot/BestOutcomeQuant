@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """Debug script to understand why validation period has 0 trades"""
 
+import sys
+import os
+
+# Add project root to path (parent of scripts/)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_ROOT)
+os.chdir(PROJECT_ROOT)  # Change to project root for file paths
+
 from datetime import datetime
 from pathlib import Path
 import json
