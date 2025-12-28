@@ -16,6 +16,7 @@
 ### Bug Fixes
 
 ### Documentation
+- [CURRENT] docs: Add comprehensive baseline performance analysis (BASELINE_ANALYSIS.md) (2025-12-28)
 - [00e8d26] docs: Add AI Assistant Quick Start Guide (2025-12-28)
 
 ### Refactoring
@@ -29,6 +30,25 @@
 ---
 
 ## Version History
+
+### v3.2 (2025-12-28)
+**Update**: Baseline Performance Analysis
+
+**New Documentation**:
+- ✅ **BASELINE_ANALYSIS.md**: Comprehensive 15-25 page technical analysis
+  - Baseline performance metrics (Trial #0: 25.9% DD, 48.6% WR, +99.88R)
+  - Architecture breakdown (15-flag confluence system, ADX regime detection)
+  - Parameter space mapping (19 current, 30+ hardcoded, 14 disabled filters)
+  - Improvement roadmap (P0-P3 priorities with impact estimates)
+  - Code quality assessment and performance projections
+
+**Key Findings**:
+- ⚠️ CRITICAL: 25.9% max drawdown exceeds FTMO 10% limit
+- ⚠️ HIGH: 12+ trading filters currently disabled
+- ⚠️ HIGH: Q3 seasonality problem (-80R July-September)
+- 🎯 Top 3 priorities: Drawdown protection, filter enablement, Q3 fix
+
+---
 
 ### v3.1 (2025-12-28)
 **Update**: History Archiving + Trading Filters

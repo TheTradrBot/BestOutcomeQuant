@@ -1,21 +1,36 @@
 # MT5 FTMO Trading Bot - Project Status Report
 **Date**: 2025-12-28  
-**Status**: ✅ **PRODUCTION-READY & COHESIVE**
+**Status**: ⚠️ **OPTIMIZATION PHASE - REQUIRES CRITICAL IMPROVEMENTS**
 
 ---
 
 ## 📊 Executive Summary
 
-The mt5bot-new project is a **professional-grade automated trading system** for FTMO 200K Challenge accounts. This final review confirms the project is **fully cohesive**, **well-documented**, and **ready for deployment**.
+The mt5bot-new project is a **professional-grade automated trading system** for FTMO 200K Challenge accounts. Recent baseline analysis (Trial #0) reveals the system has a solid foundation but **requires critical improvements** before live trading or full optimization.
+
+### ⚠️ Critical Issues Identified
+- **Max Drawdown**: 25.9% (exceeds FTMO 10% limit by 15.9 points)
+- **Q3 Seasonality**: -80R loss July-September (all other periods profitable)
+- **Disabled Filters**: 12+ filters currently off, resulting in 48.6% win rate
+- **Missing Parameters**: 30+ hardcoded values that should be optimizable
+
+**See [BASELINE_ANALYSIS.md](docs/BASELINE_ANALYSIS.md) for complete technical analysis and improvement roadmap.**
 
 ### Key Achievements
 - ✅ **Dual optimization modes** (NSGA-II multi-objective + TPE single-objective)
-- ✅ **Unified parameter management** (JSON-first, 17 optimized parameters)
-- ✅ **Auto-updating documentation** (118KB across 6 comprehensive files)
+- ✅ **Unified parameter management** (JSON-first, 19 optimized parameters)
+- ✅ **Auto-updating documentation** (118KB+ across 7 comprehensive files)
 - ✅ **Modular architecture** (tradr/* package + clean separation)
 - ✅ **Separate mode outputs** (NSGA/ and TPE/ directories)
 - ✅ **Professional metrics** (Sharpe, Sortino, Calmar, walk-forward testing)
 - ✅ **Complete historical data** (136 CSV files, 34 symbols, 4 timeframes, 2003-2025)
+- ✅ **Baseline analysis complete** (identified 3 P0 critical improvements)
+
+### Immediate Priorities (Phase 1 - 1 Week)
+- 🔴 **P0.1**: Implement drawdown protection system (daily limits, circuit breakers)
+- 🔴 **P0.2**: Enable 12+ disabled trading filters as optimizable toggles
+- 🔴 **P0.3**: Add Q3 seasonality filter (risk reduction or skip trading)
+- 🎯 **Goal**: Achieve FTMO-compliant <10% max drawdown
 
 ---
 
@@ -107,7 +122,91 @@ mt5bot-new/
 
 ---
 
-## 🎯 Core Features
+## 🎯 Current Development Phase
+
+### Phase 0: Baseline Analysis (COMPLETED ✅)
+**Duration**: 2025-12-28  
+**Deliverable**: [BASELINE_ANALYSIS.md](docs/BASELINE_ANALYSIS.md)
+
+**Findings**:
+- Trial #0 Score: 66.04 (Sharpe-based)
+- Training: +99.88R (1,517 trades, 48.6% WR)
+- Validation: +93.74R (1,018 trades, 49.7% WR)
+- **Max DD**: 25.9% ⚠️ FAILS FTMO 10% LIMIT
+
+**Critical Issues**:
+1. Drawdown exceeds FTMO limit by 15.9 percentage points
+2. 12+ trading filters disabled (minimal signal filtering)
+3. Q3 seasonality: -80R loss July-September
+4. 30+ hardcoded parameters not being optimized
+
+---
+
+### Phase 1: Critical Fixes (IN PLANNING - 1 Week)
+**Goal**: FTMO-compliant system with <10% max drawdown
+
+**Tasks**:
+1. Implement drawdown protection (daily limits, circuit breakers)
+2. Enable 14 disabled filters as optimizable toggles
+3. Add Q3 seasonality handling
+4. Run 100-trial TPE optimization
+5. Out-of-sample validation
+
+**Expected Results**:
+- Max DD: 25.9% → <10%
+- Win Rate: 48.6% → 52%+
+- Sharpe: 0.92 → 1.2+
+
+---
+
+### Phase 2: Performance Enhancements (2 Weeks)
+- Dynamic TP system (regime-adaptive)
+- Symbol-specific parameters
+- Correlation limits
+- 500-trial NSGA-II optimization
+
+**Expected Results**:
+- Max DD: <8%
+- Win Rate: >55%
+- Sharpe: >1.5
+
+---
+
+### Phase 3: Advanced Features (1 Month)
+- ML regime classification
+- News event filtering
+- Portfolio optimization
+
+**Expected Results**:
+- Max DD: <5%
+- Sharpe: >2.0
+- FTMO Pass Rate: 80%+
+
+---
+
+## 📈 Performance Metrics
+
+### Baseline (Trial #0)
+| Metric | Value | FTMO Compliant? |
+|--------|-------|-----------------|
+| Max Drawdown | 25.9% | ❌ NO (limit: 10%) |
+| Daily Max Loss | 8.2% | ❌ NO (limit: 5%) |
+| Win Rate | 48.6% | ⚠️ Low |
+| Sharpe Ratio | 0.916 | ⚠️ Below 1.5 |
+| Total R (Training) | +99.88 | ✅ Profitable |
+| Total R (Validation) | +93.74 | ✅ Profitable |
+
+### Phase Targets
+| Metric | Phase 1 | Phase 2 | Phase 3 |
+|--------|---------|---------|---------|
+| Max DD | <10% ✅ | <8% ✅ | <5% ✅ |
+| Win Rate | 52%+ | 55%+ | 58%+ |
+| Sharpe | 1.2+ | 1.5+ | 2.0+ |
+| Total R | +120 | +160 | +200+ |
+
+---
+
+## 🏗️ Core Features
 
 ### 1. **7-Pillar Confluence Trading System**
 - **Trend Alignment**: Multi-timeframe (D1/W1/MN) trend confirmation

@@ -67,6 +67,7 @@ Optimization is resumable and can be checked with: `python ftmo_challenge_analyz
 - **[API_REFERENCE.md](docs/API_REFERENCE.md)** - Complete API documentation for all modules (46KB)
 - **[DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** - Installation, deployment & troubleshooting (8.3KB)
 - **[OPTIMIZATION_FLOW.md](docs/OPTIMIZATION_FLOW.md)** - 4-phase optimization process (5.3KB)
+- **[BASELINE_ANALYSIS.md](docs/BASELINE_ANALYSIS.md)** - Comprehensive performance analysis & roadmap (NEW)
 - **[CHANGELOG.md](docs/CHANGELOG.md)** - Version history & recent changes (2.2KB)
 
 ### Legacy Documentation
