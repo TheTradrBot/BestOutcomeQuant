@@ -117,3 +117,47 @@ ftmo_analysis_output/
 **Log Files Explained:**
 - `run.log`: Complete output including "Processing asset X/37", warnings, all debug info
 - `optimization.log`: Clean trial results only (score, R, win rate, profit)
+
+---
+
+## Validation Mode (New in Dec 2025)
+
+Test existing parameters on different date ranges without running optimization.
+
+### Usage
+```bash
+# Test parameters on 2020-2022 data
+python ftmo_challenge_analyzer.py --validate --start 2020-01-01 --end 2022-12-31
+
+# Use specific parameters file
+python ftmo_challenge_analyzer.py --validate --start 2020-01-01 --end 2022-12-31 --params-file params/run_006_best.json
+```
+
+### How It Works
+1. Loads parameters from `best_params.json` (or specified file)
+2. Splits the date range: 70% training, 30% validation
+3. Runs backtests on training, validation, and full periods
+4. Exports results to `ftmo_analysis_output/VALIDATE/`
+
+### Output Structure
+```
+ftmo_analysis_output/VALIDATE/
+├── best_trades_training.csv
+├── best_trades_validation.csv
+├── best_trades_final.csv
+├── monthly_stats_final.csv
+├── symbol_performance.csv
+├── best_params.json
+├── professional_backtest_report.txt
+├── analysis_summary_*.txt
+└── history/
+    ├── val_2020_2022_001/      # First validation run for 2020-2022
+    ├── val_2020_2022_002/      # Second run same period
+    └── val_2018_2020_001/      # Different period
+```
+
+### Use Cases
+- **Strategy validation**: Test if parameters generalize to unseen data
+- **Market regime testing**: Check performance across different market conditions
+- **Historical analysis**: Backtest on pre-2023 data without re-optimization
+- **Parameter comparison**: Compare multiple parameter sets on same period

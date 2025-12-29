@@ -10,6 +10,8 @@ ftmo_analysis_output/
 │   ├── monthly_stats.csv       # Monthly performance breakdown
 │   ├── symbol_performance.csv  # Per-symbol statistics
 │   ├── best_params.json        # Best parameters from current run
+│   ├── professional_backtest_report.txt  # Detailed performance report
+│   ├── analysis_summary_*.txt  # Run summaries with timestamps
 │   └── history/                # Archived runs
 │       ├── run_001/            # First optimization run
 │       │   ├── optimization.log
@@ -18,12 +20,26 @@ ftmo_analysis_output/
 │       │   ├── best_trades_final.csv
 │       │   ├── monthly_stats.csv
 │       │   ├── symbol_performance.csv
+│       │   ├── professional_backtest_report.txt
+│       │   ├── analysis_summary_*.txt
 │       │   └── best_params.json  ← Use these params to replicate results!
 │       ├── run_002/
 │       └── run_003/
 │
-└── NSGA/                       # Multi-objective NSGA-II optimization runs
-    └── (same structure as TPE)
+├── NSGA/                       # Multi-objective NSGA-II optimization runs
+│   └── (same structure as TPE)
+│
+└── VALIDATE/                   # Validation mode runs (no optimization)
+    ├── best_trades_*.csv       # Trades from validation run
+    ├── monthly_stats_final.csv
+    ├── symbol_performance.csv
+    ├── best_params.json        # Parameters used for validation
+    ├── professional_backtest_report.txt
+    ├── analysis_summary_*.txt
+    └── history/                # Archived validation runs
+        ├── val_2020_2022_001/  # First run: 2020-2022 period
+        ├── val_2020_2022_002/  # Second run: same period
+        └── val_2018_2020_001/  # Different period
 ```
 
 ## File Descriptions
@@ -43,7 +59,15 @@ ftmo_analysis_output/
 Each `run_XXX/` directory contains a complete snapshot of an optimization run:
 - All CSV files with trade data
 - optimization.log with trial history
+- professional_backtest_report.txt with detailed metrics
+- analysis_summary_*.txt with run summaries
 - **best_params.json** with the exact parameters used
+
+### VALIDATE Directory (New in Dec 2025)
+For validation mode runs (`--validate` flag):
+- `val_YYYY_YYYY_XXX/` naming format (start year, end year, run number)
+- Contains same files as optimization runs
+- Used for testing parameters on different date ranges without optimization
 
 ## Using Historical Runs
 
@@ -103,4 +127,28 @@ grep "Validation" ftmo_analysis_output/TPE/history/*/optimization.log
 # Keep only last 10 runs (delete older)
 cd ftmo_analysis_output/TPE/history/
 ls -dt run_* | tail -n +11 | xargs rm -rf
+```
+
+## Validation Mode
+
+Test existing parameters on different date ranges:
+
+```bash
+# Test parameters on 2020-2022 data
+python ftmo_challenge_analyzer.py --validate --start 2020-01-01 --end 2022-12-31
+
+# Use specific parameters file
+python ftmo_challenge_analyzer.py --validate --start 2020-01-01 --end 2022-12-31 --params-file ftmo_analysis_output/TPE/history/run_006/best_params.json
+```
+
+**View validation results:**
+```bash
+# List all validation runs
+ls ftmo_analysis_output/VALIDATE/history/
+
+# Compare validation R across periods
+for dir in ftmo_analysis_output/VALIDATE/history/val_*/; do
+    echo -n "$(basename $dir): "
+    grep "Total R" "$dir/professional_backtest_report.txt" 2>/dev/null | head -1 || echo "N/A"
+done
 ```
