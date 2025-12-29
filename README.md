@@ -27,7 +27,29 @@ python ftmo_challenge_analyzer.py --config
 python main_live_bot.py
 ```
 
-## Recent Updates (Dec 28, 2025)
+## Recent Updates (Dec 29, 2025)
+
+### New Features
+- ✨ **Validation Mode**: Test existing parameters on different date ranges
+  ```bash
+  python ftmo_challenge_analyzer.py --validate --start 2020-01-01 --end 2022-12-31
+  ```
+- ✨ **Parameter saving fix**: ALL 30+ Optuna parameters now saved correctly (was only 15)
+- ✨ **Archive improvements**: `professional_backtest_report.txt` and `analysis_summary_*.txt` now included in history archives
+- ✨ **VALIDATE output folder**: Validation runs save to `ftmo_analysis_output/VALIDATE/history/val_YYYY_YYYY_XXX/`
+
+### Bug Fixes (Dec 29)
+- ✅ **Parameter saving**: Fixed incomplete parameter saving in OptunaOptimizer (missing TP multiples, filter toggles, FTMO params)
+- ✅ **Date handling**: Fixed `datetime.date` vs `datetime` object mismatch in validation mode
+- ✅ **Archive completeness**: Added missing files to archive (reports, summaries)
+
+### Validation Results (run_006 +701R parameters)
+- **2023-2024 (original)**: +701R, 1400+ trades
+- **2020-2022 (validation)**: +614.96R, 2602 trades, 48.3% win rate, $737,947 profit
+
+---
+
+## Previous Updates (Dec 28, 2025)
 
 ### New Features
 - ✨ **FTMOComplianceTracker**: FTMO compliance tracking with daily DD (4.5%), total DD (9%), streak halt
@@ -104,5 +126,5 @@ Optimization is resumable and can be checked with: `python ftmo_challenge_analyz
 
 ---
 
-**Last Documentation Update**: 2025-12-28 14:19:50  
+**Last Documentation Update**: 2025-12-29
 **Auto-generated**: Run `python scripts/update_docs.py` to regenerate docs

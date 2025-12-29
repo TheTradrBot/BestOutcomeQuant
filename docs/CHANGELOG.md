@@ -1,11 +1,42 @@
 # Changelog
 
-**Last Updated**: 2025-12-28  
+**Last Updated**: 2025-12-29
 **Auto-generated**: From git commits
 
 ---
 
-## Recent Changes (Session: Dec 28, 2025)
+## Recent Changes (Session: Dec 29, 2025)
+
+### New Features
+- **Validation Mode**: Test existing parameters on different date ranges without running optimization
+  ```bash
+  python ftmo_challenge_analyzer.py --validate --start 2020-01-01 --end 2022-12-31 --params-file best_params.json
+  ```
+  - Splits period into 70% training / 30% validation
+  - Outputs to `ftmo_analysis_output/VALIDATE/history/val_YYYY_YYYY_XXX/`
+  - Uses loaded parameters directly (no optimization)
+
+### Bug Fixes
+- **CRITICAL**: Fixed parameter saving bug - ALL 30+ Optuna parameters now saved correctly
+  - Previously only 15 parameters were saved (hardcoded subset in `params_to_save`)
+  - Missing parameters: tp1/2/3_r_multiple, tp1/2/3_close_pct, filter toggles, FTMO compliance params
+  - Fixed by copying ALL `self.best_params` with key mapping for compatibility
+- **CRITICAL**: Fixed date handling in validation mode
+  - `load_ohlcv_data()` expected `datetime` objects but received `date` objects
+  - Caused `AttributeError: 'datetime.date' object has no attribute 'tzinfo'`
+  - Fixed by removing `.date()` conversion and using `strftime()` for display
+- **Archive improvements**: Added missing files to history archives:
+  - `professional_backtest_report.txt`
+  - `analysis_summary_*.txt` files
+
+### Validation Results
+- Tested run_006 parameters (+701R on 2023-2024) against 2020-2022 data
+- Results: **+614.96R**, 2602 trades, 48.3% win rate, $737,947 estimated profit
+- Confirms strategy generalizes well across different market periods
+
+---
+
+## Previous Changes (Session: Dec 28, 2025)
 
 ### New Features
 - **FTMOComplianceTracker**: Implemented FTMO compliance tracking class with:
