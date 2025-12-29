@@ -195,8 +195,8 @@ class OutputManager:
         import shutil
         
         history_dir = self.output_dir / "history"
-        
-        # Files to archive
+
+        # Files to archive (explicit list)
         files_to_archive = [
             self.log_file,
             self.best_training_file,
@@ -205,8 +205,13 @@ class OutputManager:
             self.monthly_stats_file,
             self.symbol_perf_file,
             self.output_dir / "best_params.json",
+            self.output_dir / "professional_backtest_report.txt",
         ]
-        
+
+        # Also find any analysis_summary_*.txt files (timestamped)
+        analysis_summaries = list(self.output_dir.glob("analysis_summary_*.txt"))
+        files_to_archive.extend(analysis_summaries)
+
         existing_files = [f for f in files_to_archive if f.exists()]
         
         if not existing_files:

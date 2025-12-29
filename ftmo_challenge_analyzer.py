@@ -1909,30 +1909,63 @@ class OptunaOptimizer:
             else:
                 print(f"  {k}: {v}")
         
-        params_to_save = {
-            # Core risk management
-            'min_confluence': self.best_params.get('min_confluence_score', 5),
-            'min_quality_factors': self.best_params.get('min_quality_factors', 2),
-            'risk_per_trade_pct': self.best_params.get('risk_per_trade_pct', 0.5),
-            'atr_min_percentile': self.best_params.get('atr_min_percentile', 75.0),
-            'trail_activation_r': self.best_params.get('trail_activation_r', 2.2),
-            'december_atr_multiplier': self.best_params.get('december_atr_multiplier', 1.5),
-            'volatile_asset_boost': self.best_params.get('volatile_asset_boost', 1.5),
-            # Regime-Adaptive V2 parameters
-            'adx_trend_threshold': self.best_params.get('adx_trend_threshold', 25.0),
-            'adx_range_threshold': self.best_params.get('adx_range_threshold', 20.0),
-            'trend_min_confluence': self.best_params.get('trend_min_confluence', 6),
-            'range_min_confluence': self.best_params.get('range_min_confluence', 5),
-            'rsi_oversold_range': self.best_params.get('rsi_oversold_range', 25.0),
-            'rsi_overbought_range': self.best_params.get('rsi_overbought_range', 75.0),
-            'atr_volatility_ratio': self.best_params.get('atr_vol_ratio_range', 0.8),
-            'atr_trail_multiplier': self.best_params.get('atr_trail_multiplier', 1.5),
-            'partial_exit_at_1r': self.best_params.get('partial_exit_at_1r', True),
-            # NEW: ADX slope-based early trend entry
-            'use_adx_slope_rising': self.best_params.get('use_adx_slope_rising', False),
-            # NEW: Dynamic RSI in Range Mode
-            'partial_exit_pct': self.best_params.get('partial_exit_pct', 0.5),
+        # FIXED: Save ALL Optuna parameters, not just a subset
+        # Start with a copy of all best_params from Optuna
+        params_to_save = dict(self.best_params)
+
+        # Apply necessary key mappings (Optuna name -> StrategyParams name)
+        key_mappings = {
+            'min_confluence_score': 'min_confluence',
+            'atr_vol_ratio_range': 'atr_volatility_ratio',
         }
+
+        for optuna_key, strategy_key in key_mappings.items():
+            if optuna_key in params_to_save:
+                params_to_save[strategy_key] = params_to_save.pop(optuna_key)
+
+        # Ensure all critical parameters have defaults if not present
+        defaults = {
+            'min_confluence': 5,
+            'min_quality_factors': 2,
+            'risk_per_trade_pct': 0.5,
+            'atr_min_percentile': 50.0,
+            'trail_activation_r': 2.2,
+            'december_atr_multiplier': 1.5,
+            'volatile_asset_boost': 1.5,
+            'adx_trend_threshold': 25.0,
+            'adx_range_threshold': 20.0,
+            'trend_min_confluence': 5,
+            'range_min_confluence': 3,
+            'rsi_oversold_range': 25.0,
+            'rsi_overbought_range': 75.0,
+            'atr_volatility_ratio': 0.8,
+            'atr_trail_multiplier': 1.5,
+            'partial_exit_at_1r': True,
+            'partial_exit_pct': 0.5,
+            'use_adx_slope_rising': False,
+            # TP parameters
+            'tp1_close_pct': 0.35,
+            'tp2_close_pct': 0.20,
+            'tp3_close_pct': 0.25,
+            'tp1_r_multiple': 1.75,
+            'tp2_r_multiple': 3.0,
+            'tp3_r_multiple': 5.5,
+            # Filter toggles
+            'use_htf_filter': False,
+            'use_structure_filter': False,
+            'use_confirmation_filter': False,
+            'use_fib_filter': False,
+            'use_displacement_filter': False,
+            'use_candle_rejection': False,
+            # FTMO compliance
+            'daily_loss_halt_pct': 4.0,
+            'max_total_dd_warning': 8.0,
+            'consecutive_loss_halt': 999,
+        }
+
+        for key, default_val in defaults.items():
+            if key not in params_to_save:
+                params_to_save[key] = default_val
         
         try:
             save_optimized_params(params_to_save, backup=True)
@@ -2680,7 +2713,10 @@ def main():
     )
     output_mgr.generate_monthly_stats(full_year_trades, "final", risk_pct)
     output_mgr.generate_symbol_performance(full_year_trades, risk_pct)
-    print("✅ All CSV files exported successfully\n")
+
+    # CRITICAL: Save best_params to output directory for archiving
+    output_mgr.save_best_params(best_params)
+    print("✅ All CSV files and best_params.json exported successfully\n")
     
     full_year_results = print_period_results(
         full_year_trades, f"FULL PERIOD FINAL RESULTS ({FULL_PERIOD_START.year}-{FULL_PERIOD_END.year})",
