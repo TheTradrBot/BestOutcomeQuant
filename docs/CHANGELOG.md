@@ -5,7 +5,26 @@
 
 ---
 
-## Recent Changes (Session: Dec 30, 2025)
+## Recent Changes (Session: Dec 30, 2025 - Part 2)
+
+### New Features
+- **NSGA-II Directory Structure**: Added dedicated output directories for multi-objective optimization
+  - `ftmo_analysis_output/NSGA/` - NSGA-II optimization results (parallel to TPE/)
+  - `ftmo_analysis_output/VALIDATE_NSGA/` - NSGA-II parameter validation (parallel to VALIDATE/)
+  - Automatic mode detection: `--multi` flag routes to NSGA directories
+  - Complete directory mirroring: history/, README.md, same file structure
+  - Usage: `python ftmo_challenge_analyzer.py --multi --trials 100` → outputs to NSGA/
+  - Validation: `python ftmo_challenge_analyzer.py --validate --multi --start 2020-01-01 --end 2022-12-31` → outputs to VALIDATE_NSGA/
+
+### Documentation
+- Added `ftmo_analysis_output/NSGA/README.md` - NSGA-II optimization guide
+- Added `ftmo_analysis_output/VALIDATE_NSGA/README.md` - NSGA-II validation guide  
+- Added `ftmo_analysis_output/DIRECTORY_GUIDE.md` - Complete directory structure reference
+- Updated mode selection logic to support 4 output modes: TPE, NSGA, VALIDATE, VALIDATE_NSGA
+
+---
+
+## Previous Changes (Session: Dec 30, 2025 - Part 1)
 
 ### Bug Fixes
 - **CRITICAL**: Fixed validation file organization - eliminated duplicate summary files

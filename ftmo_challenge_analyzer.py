@@ -2587,7 +2587,7 @@ def run_multi_objective_optimization(n_trials: int = 50) -> Dict:
         }
 
 
-def run_validation_mode(start_date_str: str, end_date_str: str, params_file: str = "best_params.json"):
+def run_validation_mode(start_date_str: str, end_date_str: str, params_file: str = "best_params.json", optimization_mode: str = "VALIDATE"):
     """
     Run validation mode: test existing parameters on a different date range.
 
@@ -2598,6 +2598,7 @@ def run_validation_mode(start_date_str: str, end_date_str: str, params_file: str
         start_date_str: Start date in YYYY-MM-DD format
         end_date_str: End date in YYYY-MM-DD format
         params_file: Path to JSON file with parameters to test
+        optimization_mode: "VALIDATE" for TPE params, "VALIDATE_NSGA" for NSGA params
 
     Usage:
         python ftmo_challenge_analyzer.py --validate --start 2020-01-01 --end 2022-12-31
@@ -2642,8 +2643,8 @@ def run_validation_mode(start_date_str: str, end_date_str: str, params_file: str
     year_end = val_end.year
     period_name = f"val_{year_start}_{year_end}"
 
-    # Initialize OutputManager with VALIDATE mode
-    set_output_manager(optimization_mode="VALIDATE")
+    # Initialize OutputManager with validation mode (VALIDATE or VALIDATE_NSGA)
+    set_output_manager(optimization_mode=optimization_mode)
     output_mgr = get_output_manager()
 
     # Clean up any old analysis_summary files from VALIDATE root to prevent accumulation
@@ -3039,10 +3040,16 @@ def main():
             print("❌ Error: --validate requires --start and --end dates")
             print("   Example: python ftmo_challenge_analyzer.py --validate --start 2020-01-01 --end 2022-12-31")
             return
+        
+        # Determine validation mode based on optimization mode
+        use_multi_objective = args.multi
+        validation_mode = "VALIDATE_NSGA" if use_multi_objective else "VALIDATE"
+        
         run_validation_mode(
             start_date_str=args.start,
             end_date_str=args.end,
-            params_file=args.params_file
+            params_file=args.params_file,
+            optimization_mode=validation_mode
         )
         return
 
