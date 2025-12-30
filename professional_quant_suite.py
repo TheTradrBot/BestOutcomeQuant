@@ -449,7 +449,7 @@ def generate_professional_report(
         "-" * 100,
         f"{'Metric':<30} {'Training':>20} {'Validation':>20} {'Full Period':>20}",
         "-" * 100,
-        f"{'Total Return':<30} {training_metrics.total_return:>19.2f}% {validation_metrics.total_return:>19.2f}% {full_metrics.total_return:>19.2f}%",
+        f"{'Total Return':<30} {training_metrics.total_return:>19.2f}$ {validation_metrics.total_return:>19.2f}$ {full_metrics.total_return:>19.2f}$",
         f"{'Annual Return':<30} {training_metrics.annual_return:>19.2f}% {validation_metrics.annual_return:>19.2f}% {full_metrics.annual_return:>19.2f}%",
         f"{'Sharpe Ratio':<30} {training_metrics.sharpe_ratio:>20.2f} {validation_metrics.sharpe_ratio:>20.2f} {full_metrics.sharpe_ratio:>20.2f}",
         f"{'Sortino Ratio':<30} {training_metrics.sortino_ratio:>20.2f} {validation_metrics.sortino_ratio:>20.2f} {full_metrics.sortino_ratio:>20.2f}",
